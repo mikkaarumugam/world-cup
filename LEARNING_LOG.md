@@ -160,3 +160,55 @@ Sanity across the spectrum: Brazil 94% vs Vietnam (lopsided ✓), Spain ~36% vs 
 
 **THE FULL PIPELINE I BUILT:** raw scores -> learned attack/defence -> expected goals for a matchup
 -> Poisson scoreline grid -> win/draw/loss %. A complete end-to-end ML model, from zero.
+
+---
+# STAGE 2 — Is the model actually any good? (Evaluation)
+
+## Step 1 — Refactor into functions + a CLI
+
+**What we built:** reorganised `predictor.py` from a top-to-bottom script into reusable functions
+(`load_matches`, `to_long`, `train_model`, `expected_goals`, `match_probabilities`) so we can train on
+ANY subset of data (needed for evaluation) and reuse the engine everywhere. Added a command line:
+`./.venv/bin/python predictor.py Brazil Argentina`.
+
+**New ideas:**
+- **Refactoring** = change the structure, NOT the behaviour. Proof it was safe: the default
+  France/England prediction stayed identical (31.1/29.9/39.0).
+- **`sys.argv`:** the list of command-line arguments (`sys.argv[1]` = first word after the script).
+- **`if __name__ == "__main__":`** = code that runs only when the file is run directly, NOT when it's
+  imported. Makes a file both a reusable library AND a runnable program. (Proof: importing predictor
+  into evaluate.py did NOT fire its demo prediction.)
+
+## Steps 2-4 — Backtesting: split, baseline, score (in `evaluate.py`)
+
+**The core idea — backtesting:** you don't invent test cases. Take REAL past matches, train on the
+older ones, and test on the newer ones (whose results you already know). Replay history as if it were
+the future; reality already graded the exam.
+
+- **Train/test split by TIME (not random):** train 2018-2024 (6,584 matches), test 2025-2026 (1,307).
+  Splitting by time avoids **data leakage** (using the future to predict the past) — a top way people
+  fool themselves into thinking a model is good.
+- **Baseline to beat:** predict the historical **base rates** for every match, ignoring who's playing
+  (Home 47.4% / Draw 23.4% / Away 29.2%). If the model can't beat this, learning team strengths added
+  nothing.
+- **Fairness fix:** grade each test match under its ACTUAL venue (home team gets home=1 unless
+  neutral). Generalised `expected_goals`/`match_probabilities` with `home_a`/`home_b` (default neutral,
+  so the CLI is unchanged).
+- **Scoring probabilities (can't use right/wrong):**
+  - **Log-loss** = -log(probability you gave the TRUE outcome), averaged. Savagely punishes being
+    confident AND wrong. Lower = better.
+  - **Brier score** = mean squared error of the probabilities vs reality (1/0). Lower = better.
+- **Cold start:** the model can't predict a team it never saw in training — skip those test matches
+  (here: 0 skipped, all 1,307 testable).
+
+**RESULT (out-of-sample, leak-free):**
+| | log-loss | Brier |
+|---|---|---|
+| Baseline | 1.0468 | 0.6307 |
+| Model | 0.8309 | 0.4886 |
+
+Model beats baseline by ~20% on BOTH. Reference: a clueless 33/33/33 guess = 1.099 log-loss.
+
+**Honest caveat (= credibility):** the absolute 0.831 is flattered by easy mismatch games in the test
+set. The trustworthy claim is the RELATIVE, leak-free one: "beats a sensible baseline by ~20%
+out-of-sample." Knowing this caveat matters more than the score.
