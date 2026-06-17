@@ -58,7 +58,7 @@ def score_predictions(get_probs):
     get_probs(match_row) must return a dict {'home':p, 'draw':p, 'away':p}.
     """
     eps = 1e-15  # floor so log(0) never happens
-    log_loss_total, brier_total = 0.0, 0.0
+    log_loss_total, brier_total, correct = 0.0, 0.0, 0
     for _, m in testable.iterrows():
         probs = get_probs(m)
         actual = actual_outcome(m["home_score"], m["away_score"])
@@ -67,8 +67,12 @@ def score_predictions(get_probs):
         # Brier: squared error of each probability vs reality (1 if it happened).
         brier_total += sum((probs[k] - (1.0 if k == actual else 0.0)) ** 2
                            for k in ("home", "draw", "away"))
+        # Accuracy: did our most-likely outcome actually happen?
+        predicted = max(probs, key=probs.get)
+        if predicted == actual:
+            correct += 1
     n = len(testable)
-    return log_loss_total / n, brier_total / n
+    return log_loss_total / n, brier_total / n, correct / n
 
 
 # Baseline: same three numbers for every match.
@@ -84,13 +88,14 @@ def model_probs(match):
     return {"home": p_home, "draw": p_draw, "away": p_away}
 
 
-base_ll, base_brier = score_predictions(baseline_probs)
-model_ll, model_brier = score_predictions(model_probs)
+base_ll, base_brier, base_acc = score_predictions(baseline_probs)
+model_ll, model_brier, model_acc = score_predictions(model_probs)
 
-print("\n=== Results (lower is better) ===")
-print(f"{'':10s} {'log-loss':>10s} {'Brier':>10s}")
-print(f"{'Baseline':10s} {base_ll:10.4f} {base_brier:10.4f}")
-print(f"{'Model':10s} {model_ll:10.4f} {model_brier:10.4f}")
+print("\n=== Results (log-loss & Brier: lower better; accuracy: higher better) ===")
+print(f"{'':10s} {'log-loss':>10s} {'Brier':>10s} {'accuracy':>10s}")
+print(f"{'Baseline':10s} {base_ll:10.4f} {base_brier:10.4f} {base_acc:10.1%}")
+print(f"{'Model':10s} {model_ll:10.4f} {model_brier:10.4f} {model_acc:10.1%}")
 print(f"\nModel beats baseline? "
       f"log-loss: {'YES' if model_ll < base_ll else 'NO'}, "
-      f"Brier: {'YES' if model_brier < base_brier else 'NO'}")
+      f"Brier: {'YES' if model_brier < base_brier else 'NO'}, "
+      f"accuracy: {'YES' if model_acc > base_acc else 'NO'}")
