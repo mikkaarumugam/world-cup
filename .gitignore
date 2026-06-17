@@ -1,0 +1,9 @@
+# Python virtual environment (the "sealed toolbox" — never commit this)
+.venv/
+
+# Compiled Python cache
+__pycache__/
+*.pyc
+
+# Data files (downloaded, can be large — keep out of git for now)
+data/*.csv
