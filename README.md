@@ -2,6 +2,8 @@
 
 **Live site → https://mikkaarumugam.github.io/world-cup/**
 
+[![World Cup 2026 Predictor - live site](docs/preview.png)](https://mikkaarumugam.github.io/world-cup/)
+
 A transparent, calibrated football forecaster. It learns each national team's
 **attack** and **defence** strength from ~15,500 real international results, then
 turns any matchup into **win / draw / loss** odds, expected goals, and the most
@@ -16,6 +18,31 @@ predictions update on their own.
 > The README below is the tour. The full, plain-English, step-by-step journal of
 > how it was built (including the bugs and the dead ends) lives in
 > **[`LEARNING_LOG.md`](LEARNING_LOG.md)** - that's the real gold mine.
+
+---
+
+## Why I built this
+
+I learn best by building, so to teach myself machine learning I picked a problem I
+genuinely care about and took it all the way to a shipped, self-updating product -
+no tutorial rails. I started with zero ML knowledge and ended with a data pipeline,
+a trained and validated model, an interactive site, and an automated daily deploy.
+
+**If you're a recruiter or hiring manager, here's what this is meant to show:**
+
+- **I learn hard things fast, from scratch.** Every concept in the
+  [What I learned](#what-i-learned) section was brand new to me when I started.
+- **I reason about models, not just run them.** I deliberately chose a transparent,
+  interpretable approach I could explain and defend over a black box.
+- **I'm rigorous and intellectually honest.** Most of the effort went into *not
+  fooling myself*: leak-free time-split backtests, baselines to beat, calibration
+  checks, and recognising when more tuning wasn't worth it.
+- **I ship end to end.** Raw CSV → model → evaluation → product → a live site that
+  retrains and redeploys itself every day.
+- **I communicate clearly.** [`LEARNING_LOG.md`](LEARNING_LOG.md) is a readable,
+  step-by-step record of how I think, debug, and make trade-offs - written so
+  someone with no ML background can follow it, which is how I'd explain my work to a
+  teammate.
 
 ---
 
@@ -103,15 +130,19 @@ round. Real group results are used wherever they already exist.
 
 ## How good is it?
 
-Backtested **honestly** on a locked test set of **749 international matches
-(Oct 2025 - Jun 2026) the model never saw** during training or tuning:
+Backtested **honestly** on a locked test set of **~750 international matches
+(Oct 2025 onward) the model never saw** during training or tuning:
 
 | Metric | This model | Baseline |
 |---|---|---|
-| Top-pick accuracy *(higher better)* | **60.5%** | 48.5% *(always pick the home team)* |
-| Log-loss *(lower better)* | **0.846** | 1.048 *(base rates)* · 1.099 *(blind 33/33/33)* |
-| Brier score *(lower better)* | **0.497** | 0.631 *(base rates)* |
-| Calibration error *(lower better)* | **2.0 pts** | - |
+| Top-pick accuracy *(higher better)* | **~60%** | ~48% *(always pick the home team)* |
+| Log-loss *(lower better)* | **~0.85** | ~1.05 *(base rates)* · ~1.10 *(blind 33/33/33)* |
+| Brier score *(lower better)* | **~0.50** | ~0.63 *(base rates)* |
+| Calibration error *(lower better)* | **~2 pts** | - |
+
+*(Approximate figures from a recent daily build; the
+[live site](https://mikkaarumugam.github.io/world-cup/) always shows the current
+numbers as new results come in.)*
 
 A few things worth knowing about these numbers:
 
