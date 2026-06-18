@@ -33,6 +33,18 @@ def default_index(name):
     return teams.index(name) if name in teams else 0
 
 
+def whole_percents(values):
+    """Round fractions to whole percents that still sum to 100 (largest remainder)."""
+    scaled = [v * 100 for v in values]
+    floors = [int(x) for x in scaled]
+    leftover = round(sum(scaled)) - sum(floors)
+    # Give each leftover point to the value with the biggest fractional part.
+    order = sorted(range(len(values)), key=lambda i: scaled[i] - floors[i], reverse=True)
+    for i in range(leftover):
+        floors[order[i]] += 1
+    return floors
+
+
 st.set_page_config(page_title="World Cup 2026 Predictor", page_icon="⚽")
 st.title("⚽ World Cup 2026 Predictor")
 st.caption(f"A Poisson model trained on {n_matches:,} international matches since 2010 "
@@ -51,10 +63,11 @@ with tab_match:
         st.warning("Pick two different teams.")
     else:
         p_a, draw, p_b = match_probabilities(model, team_a, team_b)
+        wa, wd, wb = whole_percents([p_a, draw, p_b])  # always sum to 100
         m1, m2, m3 = st.columns(3)
-        m1.metric(f"{team_a} win", f"{p_a:.0%}")
-        m2.metric("Draw", f"{draw:.0%}")
-        m3.metric(f"{team_b} win", f"{p_b:.0%}")
+        m1.metric(f"{team_a} win", f"{wa}%")
+        m2.metric("Draw", f"{wd}%")
+        m3.metric(f"{team_b} win", f"{wb}%")
 
         # Explicit order (sort=None) so the bars match the cards above.
         chart_df = pd.DataFrame({"outcome": [f"{team_a} win", "Draw", f"{team_b} win"],
