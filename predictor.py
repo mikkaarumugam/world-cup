@@ -7,12 +7,18 @@ Run a prediction from the terminal:
     ./.venv/bin/python predictor.py Brazil Argentina
 """
 
+import os
 import sys
+import urllib.request
+
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from scipy.stats import poisson
+
+DATA_URL = ("https://raw.githubusercontent.com/martj42/"
+            "international_results/master/results.csv")
 
 EARLIEST_YEAR = 2010   # ignore matches older than this. With decay on, older data
                        # is auto-discounted, so more history helps (autoresearch).
@@ -43,6 +49,9 @@ def drop_sparse_teams(matches, min_matches=MIN_MATCHES):
 def load_matches(path="data/results.csv", earliest_year=EARLIEST_YEAR,
                  min_matches=MIN_MATCHES):
     """Load results and apply our three filters: played, recent, well-sampled."""
+    if not os.path.exists(path):   # auto-download on first run (e.g. when deployed)
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        urllib.request.urlretrieve(DATA_URL, path)
     m = pd.read_csv(path).dropna(subset=["home_score", "away_score"])
     m["date"] = pd.to_datetime(m["date"])
     m = m[m["date"].dt.year >= earliest_year]
