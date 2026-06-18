@@ -128,10 +128,9 @@ const App = {
     else fav=`<span style="font:700 16px Archivo">${m.B.name} favoured — ${pB}% to win</span>`;
     const favColor = (m.draw>=m.win&&m.draw>=m.loss)?'#5B5E66':(m.win>=m.loss?m.A.color:m.B.color);
     const seg=(w,p,c)=>`<div style="width:${(w).toFixed(2)}%;background:${c};display:flex;align-items:center;justify-content:center;color:#fff" class="mono">${p>=8?p+'%':''}</div>`;
-    const topMax=m.top[0].p;
     const scorelines=m.top.map(t=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
       <span class="mono" style="width:128px;min-width:128px;font-weight:600;font-size:14px">${m.A.name} ${t.i}–${t.j} ${m.B.name}</span>
-      <div style="flex:1;height:8px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t.p/topMax*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div>
+      <div style="flex:1;height:8px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t.p*100).toFixed(1)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div>
       <span class="mono" style="width:46px;text-align:right;font-weight:700;font-size:13px">${(t.p*100).toFixed(1)}%</span></div>`).join('');
     // heatmap 0..5
     let hmax=0; for(let i=0;i<=5;i++)for(let j=0;j<=5;j++)hmax=Math.max(hmax,m.grid[i][j]);
@@ -175,17 +174,16 @@ const App = {
     const s=this.state, d=this.data;
     const sorted=d.teams.slice().sort((a,b)=>b.title-a.title);
     const visible=sorted.slice(0,s.teamsToShow);
-    const maxT=Math.max(...sorted.map(t=>t.title))*1.05;
     const rows=visible.map(t=>{
       const ci=1.96*Math.sqrt(t.title*(1-t.title)/3000)*100, sel=t.name===s.oddsTeam;
       return `<div onclick="App.setState({oddsTeam:'${t.name.replace(/'/g,"\\'")}'})" style="display:flex;align-items:center;gap:14px;padding:9px 10px;border-radius:9px;cursor:pointer;border-left:3px solid ${sel?'#0B6E4F':'transparent'};background:${sel?'#EFF5F1':'transparent'}">
         <div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>
-        <div style="flex:1;height:22px;background:#EEECE4;border-radius:6px"><div style="width:${(t.title/maxT*100).toFixed(1)}%;height:100%;background:#0B6E4F;border-radius:6px"></div></div>
+        <div style="flex:1;height:22px;background:#EEECE4;border-radius:6px"><div style="width:${(t.title*100).toFixed(1)}%;height:100%;background:#0B6E4F;border-radius:6px"></div></div>
         <div style="width:96px;text-align:right"><div class="mono" style="font-weight:700;font-size:13px">${(t.title*100).toFixed(1)}%</div><div class="mono" style="font-size:10.5px;color:#9094A0;margin-top:2px">± ${ci.toFixed(1)}</div></div></div>`;
     }).join('');
     const ot=this.team(s.oddsTeam);
     const stages=[['Round of 16','r16'],['Quarter-final','qf'],['Semi-final','sf'],['Final','final'],['Champion','title']];
-    const funnel=stages.map(([nm,k])=>`<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:130px;min-width:130px;font:600 12px Archivo;color:#3A3D44">${nm}</span><div style="flex:1;height:30px;background:#EEECE4;border-radius:7px;overflow:hidden"><div style="width:${Math.max(ot[k]*100,2)}%;height:100%;background:linear-gradient(90deg,#0B6E4F,#14905F);border-radius:7px"></div></div><span class="mono" style="width:54px;text-align:right;font-weight:700;font-size:13px">${(ot[k]*100).toFixed(1)}%</span></div>`).join('');
+    const funnel=stages.map(([nm,k])=>`<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:130px;min-width:130px;font:600 12px Archivo;color:#3A3D44">${nm}</span><div style="flex:1;height:30px;background:#EEECE4;border-radius:7px;overflow:hidden"><div style="width:${(ot[k]*100).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#0B6E4F,#14905F);border-radius:7px"></div></div><span class="mono" style="width:54px;text-align:right;font-weight:700;font-size:13px">${(ot[k]*100).toFixed(1)}%</span></div>`).join('');
     const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
