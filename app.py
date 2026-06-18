@@ -9,20 +9,23 @@ import pandas as pd
 import streamlit as st
 
 from predictor import (load_matches, train_model, expected_goals,
-                       match_probabilities, top_scorelines)
+                       match_probabilities, top_scorelines, ensure_fresh_data)
 from world_cup import simulate_tournament
 from flags import with_flag
 
 
-@st.cache_resource
+# ttl="12h" -> the cache expires twice a day, so the next visit re-pulls fresh
+# results and retrains. New matches flow in automatically with no servers/cron.
+@st.cache_resource(ttl="12h")
 def get_model_and_teams():
+    ensure_fresh_data()   # re-download the CSV if it's stale
     matches = load_matches()
     model = train_model(matches)
     teams = sorted(set(matches["home_team"]) | set(matches["away_team"]))
     return model, teams, len(matches)
 
 
-@st.cache_data
+@st.cache_data(ttl="12h")
 def get_title_odds():
     return simulate_tournament()
 

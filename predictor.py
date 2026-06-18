@@ -9,6 +9,7 @@ Run a prediction from the terminal:
 
 import os
 import sys
+import time
 import urllib.request
 
 import numpy as np
@@ -27,6 +28,19 @@ HALF_LIFE_DAYS = 1095  # recency weighting: a match this many days old counts ha
                        # as much (~3 years, chosen by autoresearch). None = off.
 RHO = -0.05            # Dixon-Coles low-score correction (nudges 0-0/1-1 draws),
                        # chosen by cross-validation. 0 = off; negative = more draws.
+
+
+def ensure_fresh_data(path="data/results.csv", max_age_hours=12):
+    """(Re)download the results CSV if it's missing or older than max_age_hours.
+
+    Lets a deployed app pick up newly-played matches automatically. (load_matches
+    only downloads when the file is absent, to keep the CLI/evaluation stable.)
+    """
+    stale = (not os.path.exists(path)
+             or time.time() - os.path.getmtime(path) > max_age_hours * 3600)
+    if stale:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        urllib.request.urlretrieve(DATA_URL, path)
 
 
 def drop_sparse_teams(matches, min_matches=MIN_MATCHES):
