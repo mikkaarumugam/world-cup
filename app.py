@@ -31,8 +31,8 @@ def default_index(name):
 
 st.set_page_config(page_title="World Cup 2026 Predictor", page_icon="⚽")
 st.title("⚽ World Cup 2026 Match Predictor")
-st.caption(f"A Poisson model trained on {n_matches:,} international matches since 2018. "
-           "Predictions are for a neutral venue.")
+st.caption(f"A Poisson model trained on {n_matches:,} international matches since 2010 "
+           "(recent games weighted more). Predictions are for a neutral venue.")
 
 col1, col2 = st.columns(2)
 team_a = col1.selectbox("Team A", teams, index=default_index("Brazil"))
@@ -75,20 +75,21 @@ st.table(pd.DataFrame(
 with st.expander("ℹ️ How good is this model?"):
     st.markdown(
         """
-        Tested by **backtesting**: trained on matches up to 2024, then asked to
-        predict **1,307 real matches from 2025–2026 it had never seen**, and
-        graded against what actually happened.
+        Tested by **backtesting** on a locked test set never used during
+        development: trained on matches up to Sept 2025, then asked to predict
+        **745 real matches (Oct 2025 – Jun 2026) it had never seen**, and graded
+        against what actually happened.
 
         | Metric | Baseline* | This model |
         |---|---|---|
-        | Top-pick accuracy (higher better) | 48.5% | **61.3%** |
-        | Log-loss (lower better) | 1.047 | **0.831** |
-        | Brier score (lower better) | 0.631 | **0.489** |
+        | Top-pick accuracy (higher better) | 48.5% | **61.1%** |
+        | Log-loss (lower better) | 1.048 | **0.846** |
+        | Brier score (lower better) | 0.631 | **0.497** |
 
         \\*Baseline = always predict the historical average (home 47% / draw 23% /
         away 30%), ignoring who's playing.
 
-        The model beats that baseline by **~20%** on the probability metrics.
+        The model beats that baseline by **~19%** on the probability metrics.
         *Honest caveat:* accuracy is flattered by easy mismatches and capped by
         hard-to-predict draws — judge it mainly on log-loss/Brier.
         """

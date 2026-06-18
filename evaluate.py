@@ -1,101 +1,96 @@
-"""Stage 2: evaluate the predictor by backtesting on held-out 'future' matches.
+"""Evaluate the predictor with an HONEST three-way time split.
 
-We split real matches by date: train on the older ones, then test on the newer
-ones (whose results we already know) and grade the predictions.
+  TRAIN      -> fit the model
+  VALIDATION -> the score we optimize during experiments (printed by default)
+  TEST       -> locked vault; only checked once at the very end (run with --test)
+
+Optimizing against the TEST set would let us fool ourselves (overfit it). So all
+experiments use VALIDATION; TEST is the final, untouched honesty check.
+
+Usage:
+    ./.venv/bin/python evaluate.py          # validation score (use during search)
+    ./.venv/bin/python evaluate.py --test    # final locked test score (use ONCE)
 """
+
+import sys
 
 import numpy as np
 import pandas as pd
 
-from predictor import load_matches, train_model, match_probabilities
+from predictor import load_matches, drop_sparse_teams, train_model, match_probabilities
 
-# Train on matches BEFORE this date; test on matches FROM this date onward.
-CUTOFF = "2025-01-01"
-
-matches = load_matches()
-train = matches[matches["date"] < CUTOFF]
-test = matches[matches["date"] >= CUTOFF]
-
-print(f"Cutoff date: {CUTOFF}")
-print(f"Train matches (before cutoff): {len(train):5d}  "
-      f"({train['date'].min().date()} -> {train['date'].max().date()})")
-print(f"Test  matches (from cutoff):   {len(test):5d}  "
-      f"({test['date'].min().date()} -> {test['date'].max().date()})")
-
-# --- The baseline: historical base rates from the TRAINING matches ----------
-# The dumbest sensible predictor: ignore who's playing, just predict the overall
-# frequency of home win / draw / away win. Our model must beat this to be useful.
-base_home = (train["home_score"] > train["away_score"]).mean()
-base_draw = (train["home_score"] == train["away_score"]).mean()
-base_away = (train["home_score"] < train["away_score"]).mean()
-
-print("\nBaseline (historical base rates from training data):")
-print(f"  Home win: {base_home:.1%}")
-print(f"  Draw:     {base_draw:.1%}")
-print(f"  Away win: {base_away:.1%}")
-
-# --- Train the model on ONLY the training matches ---------------------------
-print("\nTraining model on the training matches...")
-model = train_model(train)
-
-# The model only knows teams it saw in training; skip test matches with a team
-# it never met (it can't predict an unknown team — the 'cold start' problem).
-known = set(train["home_team"]) | set(train["away_team"])
-testable = test[test["home_team"].isin(known) & test["away_team"].isin(known)]
-print(f"Testable matches (both teams seen in training): {len(testable)} of {len(test)}")
+VAL_START = "2024-07-01"    # validation window: [VAL_START, TEST_START)
+TEST_START = "2025-10-01"   # test window:       [TEST_START, end]
 
 
 def actual_outcome(home_score, away_score):
-    """What really happened: 'home', 'draw', or 'away'."""
     if home_score > away_score:
         return "home"
     return "draw" if home_score == away_score else "away"
 
 
-def score_predictions(get_probs):
-    """Average log-loss and Brier score over the testable matches.
-
-    get_probs(match_row) must return a dict {'home':p, 'draw':p, 'away':p}.
-    """
-    eps = 1e-15  # floor so log(0) never happens
-    log_loss_total, brier_total, correct = 0.0, 0.0, 0
-    for _, m in testable.iterrows():
+def score(get_probs, matches):
+    """Average log-loss, Brier, and accuracy of get_probs over `matches`."""
+    eps = 1e-15
+    ll, brier, correct = 0.0, 0.0, 0
+    for _, m in matches.iterrows():
         probs = get_probs(m)
         actual = actual_outcome(m["home_score"], m["away_score"])
-        # Log-loss: penalty = -log(probability we gave the TRUE outcome).
-        log_loss_total += -np.log(max(probs[actual], eps))
-        # Brier: squared error of each probability vs reality (1 if it happened).
-        brier_total += sum((probs[k] - (1.0 if k == actual else 0.0)) ** 2
-                           for k in ("home", "draw", "away"))
-        # Accuracy: did our most-likely outcome actually happen?
-        predicted = max(probs, key=probs.get)
-        if predicted == actual:
+        ll += -np.log(max(probs[actual], eps))
+        brier += sum((probs[k] - (1.0 if k == actual else 0.0)) ** 2
+                     for k in ("home", "draw", "away"))
+        if max(probs, key=probs.get) == actual:
             correct += 1
-    n = len(testable)
-    return log_loss_total / n, brier_total / n, correct / n
+    n = len(matches)
+    return ll / n, brier / n, correct / n
 
 
-# Baseline: same three numbers for every match.
-def baseline_probs(_match):
-    return {"home": base_home, "draw": base_draw, "away": base_away}
+def evaluate(eval_start, eval_end, label):
+    """Train on matches before eval_start; score on [eval_start, eval_end)."""
+    matches = load_matches()
+    train = drop_sparse_teams(matches[matches["date"] < eval_start])
+    window = matches[matches["date"] >= eval_start]
+    if eval_end is not None:
+        window = window[window["date"] < eval_end]
+
+    model = train_model(train)
+
+    # Model can only predict teams it saw in training (skip cold-start matches).
+    known = set(train["home_team"]) | set(train["away_team"])
+    testable = window[window["home_team"].isin(known) & window["away_team"].isin(known)]
+
+    # Baseline: historical base rates from training, same guess for every match.
+    base = {
+        "home": (train["home_score"] > train["away_score"]).mean(),
+        "draw": (train["home_score"] == train["away_score"]).mean(),
+        "away": (train["home_score"] < train["away_score"]).mean(),
+    }
+
+    def baseline_probs(_m):
+        return base
+
+    def model_probs(m):
+        home_flag = 0 if m["neutral"] else 1
+        p_a, draw, p_b = match_probabilities(
+            model, m["home_team"], m["away_team"], home_a=home_flag, home_b=0)
+        return {"home": p_a, "draw": draw, "away": p_b}
+
+    base_ll, base_brier, base_acc = score(baseline_probs, testable)
+    model_ll, model_brier, model_acc = score(model_probs, testable)
+
+    print(f"\n=== {label} ===")
+    print(f"Train matches: {len(train)} (up to {train['date'].max().date()})")
+    print(f"{label} matches: {len(testable)} "
+          f"({testable['date'].min().date()} -> {testable['date'].max().date()})")
+    print(f"{'':10s} {'log-loss':>10s} {'Brier':>10s} {'accuracy':>10s}")
+    print(f"{'Baseline':10s} {base_ll:10.4f} {base_brier:10.4f} {base_acc:10.1%}")
+    print(f"{'Model':10s} {model_ll:10.4f} {model_brier:10.4f} {model_acc:10.1%}")
+    print(f"\n>>> {label} log-loss (optimize this): {model_ll:.4f}")
+    return model_ll
 
 
-# Model: predict each match under its ACTUAL venue (home flag on unless neutral).
-def model_probs(match):
-    home_flag = 0 if match["neutral"] else 1
-    p_home, p_draw, p_away = match_probabilities(
-        model, match["home_team"], match["away_team"], home_a=home_flag, home_b=0)
-    return {"home": p_home, "draw": p_draw, "away": p_away}
-
-
-base_ll, base_brier, base_acc = score_predictions(baseline_probs)
-model_ll, model_brier, model_acc = score_predictions(model_probs)
-
-print("\n=== Results (log-loss & Brier: lower better; accuracy: higher better) ===")
-print(f"{'':10s} {'log-loss':>10s} {'Brier':>10s} {'accuracy':>10s}")
-print(f"{'Baseline':10s} {base_ll:10.4f} {base_brier:10.4f} {base_acc:10.1%}")
-print(f"{'Model':10s} {model_ll:10.4f} {model_brier:10.4f} {model_acc:10.1%}")
-print(f"\nModel beats baseline? "
-      f"log-loss: {'YES' if model_ll < base_ll else 'NO'}, "
-      f"Brier: {'YES' if model_brier < base_brier else 'NO'}, "
-      f"accuracy: {'YES' if model_acc > base_acc else 'NO'}")
+if __name__ == "__main__":
+    if "--test" in sys.argv:
+        evaluate(TEST_START, None, "TEST (LOCKED - use once)")
+    else:
+        evaluate(VAL_START, TEST_START, "VALIDATION")

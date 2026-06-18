@@ -14,8 +14,28 @@ import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from scipy.stats import poisson
 
-EARLIEST_YEAR = 2018   # ignore matches older than this (staler squads)
+EARLIEST_YEAR = 2010   # ignore matches older than this. With decay on, older data
+                       # is auto-discounted, so more history helps (autoresearch).
 MIN_MATCHES = 10       # drop teams with fewer games than this (too little data)
+HALF_LIFE_DAYS = 1095  # recency weighting: a match this many days old counts half
+                       # as much (~3 years, chosen by autoresearch). None = off.
+
+
+def drop_sparse_teams(matches, min_matches=MIN_MATCHES):
+    """Keep only matches where BOTH teams have >= min_matches games.
+
+    Dropping a match can push another team below the bar, so we repeat until the
+    set stops changing (a fixed-point loop). Prevents tiny too-perfect records
+    that make the maths run off to infinity (separation).
+    """
+    m = matches
+    while True:
+        counts = pd.concat([m["home_team"], m["away_team"]]).value_counts()
+        eligible = counts[counts >= min_matches].index
+        filtered = m[m["home_team"].isin(eligible) & m["away_team"].isin(eligible)]
+        if len(filtered) == len(m):
+            return filtered
+        m = filtered
 
 
 def load_matches(path="data/results.csv", earliest_year=EARLIEST_YEAR,
@@ -24,32 +44,31 @@ def load_matches(path="data/results.csv", earliest_year=EARLIEST_YEAR,
     m = pd.read_csv(path).dropna(subset=["home_score", "away_score"])
     m["date"] = pd.to_datetime(m["date"])
     m = m[m["date"].dt.year >= earliest_year]
-
-    # Keep matches where BOTH teams clear the bar; repeat until stable (fixed point).
-    while True:
-        counts = pd.concat([m["home_team"], m["away_team"]]).value_counts()
-        eligible = counts[counts >= min_matches].index
-        filtered = m[m["home_team"].isin(eligible) & m["away_team"].isin(eligible)]
-        if len(filtered) == len(m):
-            break
-        m = filtered
-    return m
+    return drop_sparse_teams(m, min_matches)
 
 
 def to_long(matches):
     """Reshape wide matches -> long: one row per 'team scored N vs opponent'."""
     home = pd.DataFrame({"team": matches["home_team"], "opponent": matches["away_team"],
-                         "goals": matches["home_score"], "home": 1})
+                         "goals": matches["home_score"], "home": 1, "date": matches["date"]})
     away = pd.DataFrame({"team": matches["away_team"], "opponent": matches["home_team"],
-                         "goals": matches["away_score"], "home": 0})
+                         "goals": matches["away_score"], "home": 0, "date": matches["date"]})
     return pd.concat([home, away], ignore_index=True)
 
 
-def train_model(matches):
-    """Train the Poisson regression on the given matches -> returns the model."""
+def train_model(matches, half_life_days=HALF_LIFE_DAYS):
+    """Train the Poisson regression on the given matches -> returns the model.
+
+    If half_life_days is set, weight recent matches more (recency weighting):
+    a match `half_life_days` old counts half as much as today's.
+    """
     long = to_long(matches)
+    weights = None
+    if half_life_days is not None:
+        age_days = (long["date"].max() - long["date"]).dt.days
+        weights = 0.5 ** (age_days / half_life_days)
     return smf.glm("goals ~ C(team) + C(opponent) + home", data=long,
-                   family=sm.families.Poisson()).fit(maxiter=300)
+                   family=sm.families.Poisson(), freq_weights=weights).fit(maxiter=300)
 
 
 def expected_goals(model, team_a, team_b, home_a=0, home_b=0):
