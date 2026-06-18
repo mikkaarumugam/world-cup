@@ -19,6 +19,8 @@ EARLIEST_YEAR = 2010   # ignore matches older than this. With decay on, older da
 MIN_MATCHES = 10       # drop teams with fewer games than this (too little data)
 HALF_LIFE_DAYS = 1095  # recency weighting: a match this many days old counts half
                        # as much (~3 years, chosen by autoresearch). None = off.
+RHO = -0.05            # Dixon-Coles low-score correction (nudges 0-0/1-1 draws),
+                       # chosen by cross-validation. 0 = off; negative = more draws.
 
 
 def drop_sparse_teams(matches, min_matches=MIN_MATCHES):
@@ -84,27 +86,37 @@ def expected_goals(model, team_a, team_b, home_a=0, home_b=0):
     return xg.iloc[0], xg.iloc[1]
 
 
-def scoreline_grid(model, team_a, team_b, home_a=0, home_b=0, max_goals=10):
-    """Return (xg_a, xg_b, grid) where grid[i, j] = P(team_a scores i, team_b j)."""
+def scoreline_grid(model, team_a, team_b, home_a=0, home_b=0, max_goals=10, rho=RHO):
+    """Return (xg_a, xg_b, grid) where grid[i, j] = P(team_a scores i, team_b j).
+
+    If rho != 0, apply the Dixon-Coles correction to the four low-score cells
+    (0-0, 1-0, 0-1, 1-1), then renormalize so the grid still sums to 1.
+    """
     xg_a, xg_b = expected_goals(model, team_a, team_b, home_a, home_b)
     a_scores = poisson.pmf(np.arange(max_goals + 1), xg_a)
     b_scores = poisson.pmf(np.arange(max_goals + 1), xg_b)
     grid = np.outer(a_scores, b_scores)         # grid[i,j] = P(a=i and b=j)
+    if rho != 0:
+        grid[0, 0] *= 1 - xg_a * xg_b * rho
+        grid[0, 1] *= 1 + xg_a * rho
+        grid[1, 0] *= 1 + xg_b * rho
+        grid[1, 1] *= 1 - rho
+        grid /= grid.sum()                      # renormalize to a valid distribution
     return xg_a, xg_b, grid
 
 
-def match_probabilities(model, team_a, team_b, home_a=0, home_b=0, max_goals=10):
+def match_probabilities(model, team_a, team_b, home_a=0, home_b=0, max_goals=10, rho=RHO):
     """Return (team_a win, draw, team_b win) probabilities. Neutral by default."""
-    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b, max_goals)
+    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b, max_goals, rho)
     a_win = np.tril(grid, -1).sum()             # a scored more
     draw = np.trace(grid)                       # equal score
     b_win = np.triu(grid, 1).sum()              # b scored more
     return a_win, draw, b_win
 
 
-def top_scorelines(model, team_a, team_b, home_a=0, home_b=0, n=5):
+def top_scorelines(model, team_a, team_b, home_a=0, home_b=0, n=5, rho=RHO):
     """Return the n most likely exact scorelines as [((a_goals, b_goals), prob), ...]."""
-    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b)
+    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b, rho=rho)
     flat_order = np.argsort(grid, axis=None)[::-1][:n]   # indices of largest probs
     results = []
     for idx in flat_order:

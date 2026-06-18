@@ -258,3 +258,28 @@ Baseline on this test set: 1.0478 log-loss / 48.5% accuracy.
 - Gains are MODEST (~1%) — realistic for a simple model + small search space. The value is the
   rigorous, self-correcting PROCESS (2 real wins, 1 correctly-rejected idea), not the 1%.
 - Negative results are results: rejecting friendly-downweighting is as valuable as keeping decay.
+
+---
+## Stage 4b — The information floor + Dixon-Coles
+
+**The floor (key insight):** measured the model's predictive ENTROPY (the score it would get if its
+own probabilities were perfectly true) = ~0.876 vs its actual log-loss ~0.861. They're basically
+EQUAL -> we're already sitting on the information floor for this feature set. The floor isn't zero:
+football is partly random, so even a perfect model scores > 0 (a 45% favourite loses sometimes, and
+that *should* cost you). Implication: tuning the current model can only nudge within a narrow band;
+a real jump needs NEW INFORMATION (xG, lineups), not more tuning. Knowing when to STOP is the skill.
+
+**Cross-validation upgrade:** rebuilt the metric as rolling-origin CV (`evaluate.py --cv`): average
+log-loss over 5 train/validate folds (all before the locked test). One window can be gamed by many
+tweaks; averaging several can't. This is what makes optimizing many times honest. CV baseline 0.8567.
+
+**Dixon-Coles experiment:** fixes the independence assumption for low scores (0-0/1-0/0-1/1-1) via one
+knob rho. Swept rho on CV. KEPT rho=-0.05: CV 0.8567 -> 0.8535. Lesson: international football wants a
+GENTLER correction than club football (~-0.13) — fewer cagey draws because of all the mismatches.
+Honest nuance: on the locked test it improved log-loss only marginally (0.8464 -> 0.8455) and top-pick
+accuracy DIPPED (61.1% -> 60.4%) — DC trades a little accuracy for better-calibrated probabilities.
+Kept because it improves our declared metric (log-loss); the tiny size confirms the floor lesson.
+
+**Decision: did NOT run the 100x autoresearch loop.** Reasoning (the senior move): we're at the
+information floor, so 100 tuning runs are low-ROI and could overfit. Documenting *why we stopped*
+beats grinding. Next value is in DATA/features and shipping, not tuning.

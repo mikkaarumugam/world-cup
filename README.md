@@ -27,7 +27,7 @@ it had never seen**.
 
 | Metric | Baseline* | This model |
 |---|---|---|
-| Top-pick accuracy (higher better) | 48.5% | **61.1%** |
+| Top-pick accuracy (higher better) | 48.5% | **60.4%** |
 | Log-loss (lower better) | 1.048 | **0.846** |
 | Brier score (lower better) | 0.631 | **0.497** |
 
