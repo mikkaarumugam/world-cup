@@ -4,6 +4,7 @@ Run it with:   ./.venv/bin/streamlit run app.py
 This is a web UI wrapped around the engine in predictor.py.
 """
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -49,9 +50,22 @@ m1.metric(f"{team_a} win", f"{p_a:.0%}")
 m2.metric("Draw", f"{draw:.0%}")
 m3.metric(f"{team_b} win", f"{p_b:.0%}")
 
-chart = pd.Series({f"{team_a} win": p_a, "Draw": draw, f"{team_b} win": p_b},
-                  name="probability")
-st.bar_chart(chart)
+# Build the chart with an EXPLICIT order (sort=None) so the bars match the cards
+# above — Streamlit's default bar_chart would re-sort them alphabetically.
+chart_df = pd.DataFrame({
+    "outcome": [f"{team_a} win", "Draw", f"{team_b} win"],
+    "probability": [p_a, draw, p_b],
+})
+chart = (
+    alt.Chart(chart_df)
+    .mark_bar()
+    .encode(
+        x=alt.X("outcome:N", sort=None, title=None),
+        y=alt.Y("probability:Q", axis=alt.Axis(format="%"), title=None),
+        color=alt.Color("outcome:N", sort=None, legend=None),
+    )
+)
+st.altair_chart(chart, use_container_width=True)
 
 # --- Expected goals + most likely scorelines --------------------------------
 st.divider()
