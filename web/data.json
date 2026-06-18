@@ -637,5 +637,169 @@
     "decisive_called": 12,
     "top2": 22,
     "draws": 9
-  }
+  },
+  "upcoming": [
+    {
+      "date": "18 Jun",
+      "home": "Czech Republic",
+      "away": "South Africa",
+      "home_iso": "cz",
+      "away_iso": "za",
+      "ph": 0.493,
+      "pd": 0.293,
+      "pa": 0.214
+    },
+    {
+      "date": "18 Jun",
+      "home": "Mexico",
+      "away": "South Korea",
+      "home_iso": "mx",
+      "away_iso": "kr",
+      "ph": 0.471,
+      "pd": 0.287,
+      "pa": 0.242
+    },
+    {
+      "date": "18 Jun",
+      "home": "Switzerland",
+      "away": "Bosnia and Herzegovina",
+      "home_iso": "ch",
+      "away_iso": "ba",
+      "ph": 0.639,
+      "pd": 0.231,
+      "pa": 0.131
+    },
+    {
+      "date": "18 Jun",
+      "home": "Canada",
+      "away": "Qatar",
+      "home_iso": "ca",
+      "away_iso": "qa",
+      "ph": 0.682,
+      "pd": 0.204,
+      "pa": 0.115
+    },
+    {
+      "date": "19 Jun",
+      "home": "Scotland",
+      "away": "Morocco",
+      "home_iso": "gb-sct",
+      "away_iso": "ma",
+      "ph": 0.188,
+      "pd": 0.326,
+      "pa": 0.486
+    },
+    {
+      "date": "19 Jun",
+      "home": "Brazil",
+      "away": "Haiti",
+      "home_iso": "br",
+      "away_iso": "ht",
+      "ph": 0.918,
+      "pd": 0.064,
+      "pa": 0.018
+    },
+    {
+      "date": "19 Jun",
+      "home": "United States",
+      "away": "Australia",
+      "home_iso": "us",
+      "away_iso": "au",
+      "ph": 0.387,
+      "pd": 0.285,
+      "pa": 0.328
+    },
+    {
+      "date": "19 Jun",
+      "home": "Turkey",
+      "away": "Paraguay",
+      "home_iso": "tr",
+      "away_iso": "py",
+      "ph": 0.399,
+      "pd": 0.299,
+      "pa": 0.302
+    },
+    {
+      "date": "20 Jun",
+      "home": "Tunisia",
+      "away": "Japan",
+      "home_iso": "tn",
+      "away_iso": "jp",
+      "ph": 0.192,
+      "pd": 0.302,
+      "pa": 0.506
+    },
+    {
+      "date": "20 Jun",
+      "home": "Netherlands",
+      "away": "Sweden",
+      "home_iso": "nl",
+      "away_iso": "se",
+      "ph": 0.561,
+      "pd": 0.23,
+      "pa": 0.209
+    }
+  ],
+  "recent": [
+    {
+      "date": "17 Jun",
+      "home": "Ghana",
+      "away": "Panama",
+      "home_iso": "gh",
+      "away_iso": "pa",
+      "hs": 1,
+      "as": 0,
+      "correct": true
+    },
+    {
+      "date": "17 Jun",
+      "home": "Uzbekistan",
+      "away": "Colombia",
+      "home_iso": "uz",
+      "away_iso": "co",
+      "hs": 1,
+      "as": 3,
+      "correct": true
+    },
+    {
+      "date": "17 Jun",
+      "home": "Portugal",
+      "away": "DR Congo",
+      "home_iso": "pt",
+      "away_iso": "cd",
+      "hs": 1,
+      "as": 1,
+      "correct": false
+    },
+    {
+      "date": "17 Jun",
+      "home": "England",
+      "away": "Croatia",
+      "home_iso": "gb-eng",
+      "away_iso": "hr",
+      "hs": 4,
+      "as": 2,
+      "correct": true
+    },
+    {
+      "date": "16 Jun",
+      "home": "Austria",
+      "away": "Jordan",
+      "home_iso": "at",
+      "away_iso": "jo",
+      "hs": 3,
+      "as": 1,
+      "correct": true
+    },
+    {
+      "date": "16 Jun",
+      "home": "Argentina",
+      "away": "Algeria",
+      "home_iso": "ar",
+      "away_iso": "dz",
+      "hs": 3,
+      "as": 0,
+      "correct": true
+    }
+  ]
 }

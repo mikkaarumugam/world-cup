@@ -131,6 +131,43 @@ def tournament_tracker(model):
             "decisive_called": decisive_called, "top2": top2, "draws": draws}
 
 
+def fixtures_and_recent(model, n_up=10, n_recent=6):
+    """Predictions for upcoming WC fixtures + how recent calls turned out."""
+    raw = pd.read_csv("data/results.csv")
+    raw["date"] = pd.to_datetime(raw["date"])
+    wc = raw[(raw["date"].dt.year == 2026) & (raw["tournament"] == "FIFA World Cup")]
+    known = set(load_matches()["home_team"]) | set(load_matches()["away_team"])
+
+    def ok(m):
+        return m["home_team"] in known and m["away_team"] in known
+
+    def fmt(d):
+        return f"{d.day} {d.strftime('%b')}"
+
+    upcoming = []
+    for _, m in wc[wc["home_score"].isna()].sort_values("date").iterrows():
+        if not ok(m) or len(upcoming) >= n_up:
+            continue
+        a, d, b = match_probabilities(model, m["home_team"], m["away_team"],
+                                      home_a=0 if m["neutral"] else 1)
+        upcoming.append({"date": fmt(m["date"]), "home": m["home_team"], "away": m["away_team"],
+                         "home_iso": iso(m["home_team"]), "away_iso": iso(m["away_team"]),
+                         "ph": round(float(a), 3), "pd": round(float(d), 3), "pa": round(float(b), 3)})
+
+    recent = []
+    for _, m in wc[wc["home_score"].notna()].sort_values("date").iloc[::-1].iterrows():
+        if not ok(m) or len(recent) >= n_recent:
+            continue
+        a, d, b = match_probabilities(model, m["home_team"], m["away_team"],
+                                      home_a=0 if m["neutral"] else 1)
+        probs = {"home": a, "draw": d, "away": b}
+        correct = max(probs, key=probs.get) == actual_outcome(m["home_score"], m["away_score"])
+        recent.append({"date": fmt(m["date"]), "home": m["home_team"], "away": m["away_team"],
+                       "home_iso": iso(m["home_team"]), "away_iso": iso(m["away_team"]),
+                       "hs": int(m["home_score"]), "as": int(m["away_score"]), "correct": bool(correct)})
+    return upcoming, recent
+
+
 def main():
     matches = load_matches()
     model = train_model(matches)
@@ -152,6 +189,7 @@ def main():
             "r16": round(float(row["r16"]), 4),
         })
 
+    upcoming, recent = fixtures_and_recent(model)
     data = {
         "generated": date.today().isoformat(),
         "baseline": round(baseline, 4),
@@ -160,6 +198,8 @@ def main():
         "teams": teams,
         "performance": backtest_performance(),
         "tracker": tournament_tracker(model),
+        "upcoming": upcoming,
+        "recent": recent,
     }
 
     os.makedirs("web", exist_ok=True)
