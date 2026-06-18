@@ -60,8 +60,13 @@ def build():
     return teams, groups, fixtures, adv
 
 
+# Knockout rounds, and the level a team must reach to "make" each one.
+# Levels: 0=reached knockout (R32), 1=R16, 2=QF, 3=SF, 4=Final, 5=Champion.
+ROUND_LEVELS = {"r16": 1, "qf": 2, "sf": 3, "final": 4, "title": 5}
+
+
 def simulate_once(teams, groups, fixtures, adv):
-    """Play the whole tournament once; return (champion, [two finalists])."""
+    """Play the whole tournament once; return {team: deepest knockout level}."""
     pts = {t: 0 for t in teams}
     gd = {t: 0 for t in teams}
     gf = {t: 0 for t in teams}
@@ -95,37 +100,38 @@ def simulate_once(teams, groups, fixtures, adv):
     bracket = winners + runners + best_thirds
     RNG.shuffle(bracket)   # randomized draw (we don't model the official bracket)
 
-    finalists = None
+    reached = {t: 0 for t in bracket}   # everyone here reached the knockout (R32)
+    level = 0
     while len(bracket) > 1:
-        if len(bracket) == 2:
-            finalists = list(bracket)
+        level += 1
         nxt = []
         for i in range(0, len(bracket), 2):
             a, b = bracket[i], bracket[i + 1]
             nxt.append(a if RNG.random() < adv[(a, b)] else b)
+        for t in nxt:
+            reached[t] = level
         bracket = nxt
-    return bracket[0], finalists
+    return reached
 
 
 def simulate_tournament(n_sims=N_SIMS):
+    """Return a table of each team's chance to reach R16/QF/SF/Final/Win."""
     teams, groups, fixtures, adv = build()
-    titles = {t: 0 for t in teams}
-    finals = {t: 0 for t in teams}
+    counts = {name: {t: 0 for t in teams} for name in ROUND_LEVELS}
     for _ in range(n_sims):
-        champ, finalists = simulate_once(teams, groups, fixtures, adv)
-        titles[champ] += 1
-        for t in finalists:
-            finals[t] += 1
-    table = pd.DataFrame({
-        "title_pct": pd.Series(titles) / n_sims,
-        "final_pct": pd.Series(finals) / n_sims,
-    }).sort_values("title_pct", ascending=False)
-    return table
+        reached = simulate_once(teams, groups, fixtures, adv)
+        for team, lvl in reached.items():
+            for name, need in ROUND_LEVELS.items():
+                if lvl >= need:
+                    counts[name][team] += 1
+    table = pd.DataFrame({name: pd.Series(c) / n_sims for name, c in counts.items()})
+    return table.sort_values("title", ascending=False)
 
 
 if __name__ == "__main__":
     print(f"Simulating the 2026 World Cup {N_SIMS} times...\n")
     table = simulate_tournament()
-    print(f"{'Team':<22} {'Win title':>10} {'Reach final':>12}")
-    for team, row in table.head(16).iterrows():
-        print(f"{team:<22} {row['title_pct']:>9.1%} {row['final_pct']:>11.1%}")
+    print(f"{'Team':<22}{'R16':>8}{'QF':>8}{'SF':>8}{'Final':>8}{'Win':>8}")
+    for team, r in table.head(16).iterrows():
+        print(f"{team:<22}{r['r16']:>8.1%}{r['qf']:>8.1%}{r['sf']:>8.1%}"
+              f"{r['final']:>8.1%}{r['title']:>8.1%}")

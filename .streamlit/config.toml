@@ -1,0 +1,7 @@
+# Streamlit theme — gives the app a custom look instead of the default.
+[theme]
+primaryColor = "#16a34a"            # pitch-green accent (buttons, highlights)
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f5f9"  # cards / table backgrounds
+textColor = "#0f172a"
+font = "sans serif"
