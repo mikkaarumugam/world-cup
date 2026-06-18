@@ -98,23 +98,37 @@ def backtest_performance():
 
 
 def tournament_tracker(model):
-    """How many played 2026 World Cup favourites the model called correctly."""
+    """How the model is doing on played 2026 World Cup matches so far.
+
+    Top-pick accuracy is harsh in the group stage (draws are near coin-flips), so
+    we also report decisive-match accuracy and top-2 coverage — fairer, fuller.
+    """
     raw = pd.read_csv("data/results.csv")
     raw["date"] = pd.to_datetime(raw["date"])
     wc = raw[(raw["date"].dt.year == 2026) & (raw["tournament"] == "FIFA World Cup")
              & raw["home_score"].notna()]
     known = set(load_matches()["home_team"]) | set(load_matches()["away_team"])
-    called = total = 0
+    total = top = decisive = decisive_called = top2 = draws = 0
     for _, m in wc.iterrows():
         if m["home_team"] not in known or m["away_team"] not in known:
             continue
         hf = 0 if m["neutral"] else 1
         a, d, b = match_probabilities(model, m["home_team"], m["away_team"], home_a=hf)
-        pred = max([("home", a), ("draw", d), ("away", b)], key=lambda x: x[1])[0]
-        if pred == actual_outcome(m["home_score"], m["away_score"]):
-            called += 1
+        probs = {"home": a, "draw": d, "away": b}
+        act = actual_outcome(m["home_score"], m["away_score"])
         total += 1
-    return {"called": called, "total": total}
+        if max(probs, key=probs.get) == act:
+            top += 1
+        if act == "draw":
+            draws += 1
+        else:
+            decisive += 1
+            if max(probs, key=probs.get) == act:
+                decisive_called += 1
+        if act in sorted(probs, key=probs.get, reverse=True)[:2]:
+            top2 += 1
+    return {"total": total, "top": top, "decisive": decisive,
+            "decisive_called": decisive_called, "top2": top2, "draws": draws}
 
 
 def main():
@@ -156,7 +170,9 @@ def main():
     print(f"Performance: {data['performance']['n']} test matches, "
           f"acc={data['performance']['accuracy']:.1%}, "
           f"brier={data['performance']['brier']:.3f}")
-    print(f"Tracker: {data['tracker']['called']}/{data['tracker']['total']} favourites called")
+    t = data["tracker"]
+    print(f"Tracker: {t['decisive_called']}/{t['decisive']} decisive called, "
+          f"{t['top2']}/{t['total']} in top-2")
 
 
 if __name__ == "__main__":

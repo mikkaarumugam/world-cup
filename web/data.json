@@ -631,7 +631,11 @@
     ]
   },
   "tracker": {
-    "called": 12,
-    "total": 24
+    "total": 24,
+    "top": 12,
+    "decisive": 15,
+    "decisive_called": 12,
+    "top2": 22,
+    "draws": 9
   }
 }
