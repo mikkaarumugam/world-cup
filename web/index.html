@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Cup 2026 Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#F1EFE9}
+  body{font-family:'Archivo',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#15171C}
+  ::selection{background:#0B6E4F;color:#fff}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+  .card{background:#fff;border:1px solid #E7E4DC;border-radius:13px}
+  .eyebrow{font:600 10.5px/1 'JetBrains Mono';letter-spacing:.05em;text-transform:uppercase;color:#8E9099}
+  button{font-family:inherit}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:#DCD9D0;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#0B6E4F;border:3px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.25);cursor:pointer}
+  .menu{position:absolute;z-index:20;top:100%;left:0;right:0;margin-top:6px;background:#fff;border:1px solid #E2DFD6;border-radius:11px;box-shadow:0 16px 40px rgba(0,0,0,.14);max-height:320px;overflow:auto;padding:6px}
+  .menu button{width:100%;display:flex;align-items:center;gap:11px;padding:9px 10px;background:transparent;border:none;border-radius:8px;cursor:pointer;text-align:left}
+  .menu button:hover{background:#F3F1EA}
+  .badge{border-radius:50%;overflow:hidden;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);background:#EEECE4 center/cover no-repeat}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const App = {
+  state:{tab:'match', teamA:'Brazil', teamB:'Argentina', openA:false, openB:false, teamsToShow:16, oddsTeam:'Argentina'},
+  data:null,
+
+  async init(){
+    this.data = await fetch('data.json').then(r=>r.json());
+    const t = this.data.teams;
+    if(!t.find(x=>x.name===this.state.teamA)) this.state.teamA = t[0].name;
+    if(!t.find(x=>x.name===this.state.teamB)) this.state.teamB = t[1].name;
+    this.state.oddsTeam = t[0].name;
+    document.addEventListener('click', e=>{
+      if(!e.target.closest('.dd')){ this.state.openA=this.state.openB=false; this.render(); }
+    });
+    this.render();
+  },
+
+  team(name){ return this.data.teams.find(t=>t.name===name) || this.data.teams[0]; },
+  flag(iso){ return `https://flagcdn.com/w160/${iso}.png`; },
+  badge(t,sz){ return `<span class="badge" style="width:${sz}px;height:${sz}px;min-width:${sz}px;background-image:url('${this.flag(t.iso)}')"></span>`; },
+  fact(n){ let f=1; for(let i=2;i<=n;i++) f*=i; return f; },
+  pois(k,l){ return Math.exp(-l)*Math.pow(l,k)/this.fact(k); },
+
+  // Reproduces predictor.py exactly: xg = baseline * attack * opp defence,
+  // Poisson scoreline grid, Dixon-Coles correction, renormalize.
+  analyze(){
+    const A=this.team(this.state.teamA), B=this.team(this.state.teamB);
+    const base=this.data.baseline, rho=this.data.rho, K=10;
+    const xgA=base*A.attack*B.defence, xgB=base*B.attack*A.defence;
+    const pa=[],pb=[]; for(let i=0;i<=K;i++){pa[i]=this.pois(i,xgA);pb[i]=this.pois(i,xgB);}
+    const g=[]; for(let i=0;i<=K;i++){g[i]=[];for(let j=0;j<=K;j++)g[i][j]=pa[i]*pb[j];}
+    g[0][0]*=1-xgA*xgB*rho; g[0][1]*=1+xgA*rho; g[1][0]*=1+xgB*rho; g[1][1]*=1-rho;
+    let tot=0; for(let i=0;i<=K;i++)for(let j=0;j<=K;j++)tot+=g[i][j];
+    let win=0,draw=0,loss=0;
+    for(let i=0;i<=K;i++)for(let j=0;j<=K;j++){const p=g[i][j]/tot; if(i>j)win+=p;else if(i===j)draw+=p;else loss+=p;}
+    const cells=[]; for(let i=0;i<=K;i++)for(let j=0;j<=K;j++)cells.push({i,j,p:g[i][j]/tot});
+    const top=cells.slice().sort((x,y)=>y.p-x.p).slice(0,5);
+    return {A,B,xgA,xgB,win,draw,loss,top,grid:g.map(r=>r.map(v=>v/tot))};
+  },
+
+  setState(patch){ Object.assign(this.state, patch); this.render(); },
+
+  render(){
+    const d=this.data, s=this.state;
+    document.getElementById('app').innerHTML =
+      this.utilBar() + '<div class="wrap">' + this.masthead() + this.tabs() +
+      (s.tab==='match'? this.matchPanel() : s.tab==='odds'? this.oddsPanel() : this.perfPanel()) +
+      this.footer() + '</div>';
+  },
+
+  utilBar(){ return `
+    <div style="border-bottom:1px solid #E2DFD6;background:#FBFAF7">
+      <div class="wrap" style="height:52px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:26px;height:26px;border-radius:7px;background:#0B6E4F;display:flex;align-items:center;justify-content:center;color:#fff;font:800 13px Archivo">W</div>
+          <span class="mono" style="font-weight:700;font-size:12px;letter-spacing:.14em">WC26 · PREDICTOR</span>
+        </div>
+        <a href="https://github.com/mikkaarumugam/world-cup" style="font:600 12.5px Archivo;color:#fff;padding:8px 14px;border-radius:8px;background:#15171C">GitHub ↗</a>
+      </div>
+    </div>`; },
+
+  masthead(){ const d=this.data; return `
+    <div style="padding:46px 0 30px;border-bottom:1px solid #E2DFD6">
+      <div class="mono" style="font-weight:700;font-size:12px;letter-spacing:.16em;color:#0B6E4F;margin-bottom:18px">FIFA WORLD CUP 2026 · FORECAST MODEL</div>
+      <h1 style="margin:0;font:800 clamp(30px,5.2vw,50px)/1.04 Archivo;letter-spacing:-.025em;max-width:760px">Every match and the whole bracket, in probabilities.</h1>
+      <p style="margin:20px 0 0;font:400 clamp(15px,2.2vw,18px)/1.55 Archivo;color:#4C4F57;max-width:660px">Win, draw and loss odds plus full-tournament simulations from a transparent Poisson model — fit on real international results, validated against held-out matches, and updated as games are played.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:30px;margin-top:28px">
+        ${this.stat(d.n_matches.toLocaleString(),'Matches trained')}
+        <div style="width:1px;background:#E2DFD6"></div>
+        ${this.stat(d.performance.accuracy*100|0 ? (d.performance.accuracy*100).toFixed(1)+'%':'','Backtest accuracy')}
+        <div style="width:1px;background:#E2DFD6"></div>
+        ${this.stat('3,000','Bracket simulations')}
+      </div>
+    </div>`; },
+  stat(v,l){ return `<div><div class="mono" style="font:800 24px/1 Archivo">${v}</div><div class="eyebrow" style="margin-top:7px">${l}</div></div>`; },
+
+  tabs(){ const s=this.state; const tb=(id,label)=>`<button onclick="App.setState({tab:'${id}'})" style="padding:14px 2px;margin-right:26px;background:none;border:none;border-bottom:2px solid ${s.tab===id?'#0B6E4F':'transparent'};color:${s.tab===id?'#15171C':'#9094A0'};font:${s.tab===id?700:600} 15px Archivo;cursor:pointer">${label}</button>`;
+    return `<div style="display:flex;align-items:center;border-bottom:1px solid #E2DFD6;margin-top:4px">${tb('match','Match predictor')}${tb('odds','World Cup odds')}${tb('perf','Model performance')}</div>`; },
+
+  dropdown(side){
+    const s=this.state, sel=this.team(side==='A'?s.teamA:s.teamB), open=side==='A'?s.openA:s.openB;
+    const teams=this.data.teams.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    const align = side==='B'?'text-align:right':'';
+    const menu = open? `<div class="menu">${teams.map(t=>`<button onclick="App.setState({team${side}:'${t.name.replace(/'/g,"\\'")}',openA:false,openB:false})">${this.badge(t,26)}<span style="font:500 15px Archivo">${t.name}</span></button>`).join('')}</div>`:'';
+    return `<div class="dd" style="flex:1 1 260px;min-width:240px;position:relative">
+      <div class="eyebrow" style="margin-bottom:9px;${align}">${side==='A'?'Team A':'Team B'}</div>
+      <button onclick="App.setState({open${side}:${!open},open${side==='A'?'B':'A'}:false})" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1px solid #E2DFD6;border-radius:11px;cursor:pointer">
+        ${this.badge(sel,32)}<span style="font:600 16px Archivo">${sel.name}</span><span style="margin-left:auto;color:#9094A0">▾</span>
+      </button>${menu}</div>`;
+  },
+
+  matchPanel(){
+    const m=this.analyze();
+    const pA=Math.round(m.win*100), pD=Math.round(m.draw*100), pB=Math.round(m.loss*100);
+    let fav;
+    if(m.draw>=m.win&&m.draw>=m.loss) fav=`<span style="font:700 16px Archivo">Level match — a draw is the single most likely result (${pD}%)</span>`;
+    else if(m.win>=m.loss) fav=`<span style="font:700 16px Archivo">${m.A.name} favoured — ${pA}% to win</span>`;
+    else fav=`<span style="font:700 16px Archivo">${m.B.name} favoured — ${pB}% to win</span>`;
+    const favColor = (m.draw>=m.win&&m.draw>=m.loss)?'#5B5E66':(m.win>=m.loss?m.A.color:m.B.color);
+    const seg=(w,p,c)=>`<div style="width:${(w).toFixed(2)}%;background:${c};display:flex;align-items:center;justify-content:center;color:#fff" class="mono">${p>=8?p+'%':''}</div>`;
+    const topMax=m.top[0].p;
+    const scorelines=m.top.map(t=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
+      <span class="mono" style="width:128px;min-width:128px;font-weight:600;font-size:14px">${m.A.name} ${t.i}–${t.j} ${m.B.name}</span>
+      <div style="flex:1;height:8px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t.p/topMax*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div>
+      <span class="mono" style="width:46px;text-align:right;font-weight:700;font-size:13px">${(t.p*100).toFixed(1)}%</span></div>`).join('');
+    // heatmap 0..5
+    let hmax=0; for(let i=0;i<=5;i++)for(let j=0;j<=5;j++)hmax=Math.max(hmax,m.grid[i][j]);
+    const heat=[...Array(6)].map((_,i)=>`<div style="display:flex;gap:4px;margin-bottom:4px;align-items:center"><div class="mono" style="width:30px;text-align:center;font-size:11px;color:#9094A0">${i}</div>${[...Array(6)].map((_,j)=>{const p=m.grid[i][j];const a=Math.min(1,Math.sqrt(p/hmax)*0.95);const txt=a>0.5?'#fff':'#41444B';return `<div class="mono" style="width:46px;height:34px;min-width:46px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:11px;background:rgba(11,110,79,${a.toFixed(3)});color:${txt}">${p>=0.01?Math.round(p*100):''}</div>`;}).join('')}</div>`).join('');
+    return `<div style="padding:34px 0 10px">
+      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
+        ${this.dropdown('A')}
+        <button onclick="App.setState({teamA:'${m.B.name.replace(/'/g,"\\'")}',teamB:'${m.A.name.replace(/'/g,"\\'")}'})" title="Swap" style="margin-bottom:1px;width:44px;height:44px;min-width:44px;border-radius:11px;background:#15171C;color:#fff;border:none;cursor:pointer;font-size:16px">⇄</button>
+        ${this.dropdown('B')}
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:13px;padding:15px 18px;margin-top:26px;border-left:3px solid ${favColor}">${fav}</div>
+      <div style="margin-top:24px">
+        <div style="display:flex;height:48px;border-radius:11px;overflow:hidden;border:1px solid #E7E4DC;font:700 16px 'JetBrains Mono'">
+          ${seg(m.win*100,pA,m.A.color)}${seg(m.draw*100,pD,'#8B8F97')}${seg(m.loss*100,pB,m.B.color)}
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:11px;font:500 13px Archivo;color:#5B5E66">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${m.A.color};margin-right:7px"></span>${m.A.name} win</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#8B8F97;margin-right:7px"></span>Draw</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${m.B.color};margin-right:7px"></span>${m.B.name} win</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:24px;align-items:flex-start">
+        <div style="flex:1 1 360px;min-width:300px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;gap:14px">
+            <div class="card" style="flex:1;padding:18px 20px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">${this.badge(m.A,26)}<span class="eyebrow">Expected goals</span></div><div class="mono" style="font:800 42px/1 Archivo">${m.xgA.toFixed(2)}</div></div>
+            <div class="card" style="flex:1;padding:18px 20px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">${this.badge(m.B,26)}<span class="eyebrow">Expected goals</span></div><div class="mono" style="font:800 42px/1 Archivo">${m.xgB.toFixed(2)}</div></div>
+          </div>
+          <div class="card" style="padding:18px 20px"><div class="eyebrow" style="margin-bottom:16px">Most likely scorelines</div>${scorelines}</div>
+        </div>
+        <div class="card" style="flex:1 1 360px;min-width:300px;padding:18px 20px">
+          <div class="eyebrow" style="margin-bottom:5px">Scoreline distribution</div>
+          <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:18px">Poisson probability of each exact result (%)</div>
+          <div style="overflow-x:auto"><div style="display:flex;gap:4px;margin-left:34px;margin-bottom:5px">${[0,1,2,3,4,5].map(n=>`<div class="mono" style="width:46px;text-align:center;font-size:11px;color:#9094A0">${n}</div>`).join('')}</div>${heat}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:14px" class="mono"><span style="font-size:11px;color:#9094A0">↓ ${m.A.name} goals</span><span style="font-size:11px;color:#9094A0">${m.B.name} goals →</span></div>
+        </div>
+      </div>
+    </div>`;
+  },
+
+  oddsPanel(){
+    const s=this.state, d=this.data;
+    const sorted=d.teams.slice().sort((a,b)=>b.title-a.title);
+    const visible=sorted.slice(0,s.teamsToShow);
+    const maxT=Math.max(...sorted.map(t=>t.title))*1.05;
+    const rows=visible.map(t=>{
+      const ci=1.96*Math.sqrt(t.title*(1-t.title)/3000)*100, sel=t.name===s.oddsTeam;
+      return `<div onclick="App.setState({oddsTeam:'${t.name.replace(/'/g,"\\'")}'})" style="display:flex;align-items:center;gap:14px;padding:9px 10px;border-radius:9px;cursor:pointer;border-left:3px solid ${sel?'#0B6E4F':'transparent'};background:${sel?'#EFF5F1':'transparent'}">
+        <div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>
+        <div style="flex:1;height:22px;background:#EEECE4;border-radius:6px"><div style="width:${(t.title/maxT*100).toFixed(1)}%;height:100%;background:#0B6E4F;border-radius:6px"></div></div>
+        <div style="width:96px;text-align:right"><div class="mono" style="font-weight:700;font-size:13px">${(t.title*100).toFixed(1)}%</div><div class="mono" style="font-size:10.5px;color:#9094A0;margin-top:2px">± ${ci.toFixed(1)}</div></div></div>`;
+    }).join('');
+    const ot=this.team(s.oddsTeam);
+    const stages=[['Round of 16','r16'],['Quarter-final','qf'],['Semi-final','sf'],['Final','final'],['Champion','title']];
+    const funnel=stages.map(([nm,k])=>`<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:130px;min-width:130px;font:600 12px Archivo;color:#3A3D44">${nm}</span><div style="flex:1;height:30px;background:#EEECE4;border-radius:7px;overflow:hidden"><div style="width:${Math.max(ot[k]*100,2)}%;height:100%;background:linear-gradient(90deg,#0B6E4F,#14905F);border-radius:7px"></div></div><span class="mono" style="width:54px;text-align:right;font-weight:700;font-size:13px">${(ot[k]*100).toFixed(1)}%</span></div>`).join('');
+    const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
+    const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
+    return `<div style="padding:34px 0 10px">
+      <p style="margin:0 0 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated — the strongest are shown.</p>
+      <div class="card" style="padding:20px 22px;margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="eyebrow">Teams to show</span><span class="mono" style="font-weight:700;font-size:15px;color:#0B6E4F">${s.teamsToShow}</span></div>
+        <input type="range" min="8" max="48" value="${s.teamsToShow}" oninput="App.setState({teamsToShow:+this.value})" style="width:100%;background:linear-gradient(to right,#0B6E4F 0%,#0B6E4F ${pct}%,#DCD9D0 ${pct}%,#DCD9D0 100%)">
+      </div>
+      <div class="card" style="padding:22px 24px;margin-bottom:18px">
+        <div style="font:700 16px Archivo;margin-bottom:3px">Title odds</div>
+        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:18px">Chance of winning the tournament (± shows 95% simulation uncertainty). Click a team to trace its road to the trophy.</div>
+        ${rows}
+      </div>
+      <div class="card" style="padding:22px 24px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">${this.badge(ot,32)}<div><div style="font:700 16px Archivo">${ot.name} — road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">Probability of reaching each knockout round</div></div></div>
+        <div style="margin-top:18px">${funnel}</div>
+      </div>
+      <div class="card" style="padding:22px 24px">
+        <div style="font:700 16px Archivo;margin-bottom:3px">How far each team goes</div>
+        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:20px">Probability of reaching each stage of the bracket</div>
+        <div style="overflow-x:auto"><div style="min-width:640px"><div style="display:flex;gap:10px;padding-bottom:11px;border-bottom:1px solid #EEECE4;margin-bottom:14px"><span class="eyebrow" style="width:150px;min-width:150px">Team</span>${['Reach R16','Reach QF','Reach SF','Reach final','Win title'].map(h=>`<span class="eyebrow" style="flex:1">${h}</span>`).join('')}</div>${progRows}</div></div>
+      </div>
+    </div>`;
+  },
+
+  perfPanel(){
+    const p=this.data.performance, tr=this.data.tracker;
+    const metric=(l,v,sub)=>`<div class="card" style="flex:1 1 200px;min-width:168px;padding:18px 20px"><div class="eyebrow">${l}</div><div class="mono" style="font:800 32px/1 Archivo;margin:11px 0 8px">${v}</div><div style="font:500 12px Archivo;color:#19A463">${sub}</div></div>`;
+    const pts=p.calibration.map(c=>({x:(40+c.pred*240).toFixed(1),y:(260-c.obs*240).toFixed(1)}));
+    const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+    const circles=pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#0B6E4F" stroke="#fff" stroke-width="1.5"/>`).join('');
+    return `<div style="padding:34px 0 10px">
+      <div class="mono" style="font-weight:700;font-size:12px;letter-spacing:.14em;color:#0B6E4F;margin-bottom:13px">VALIDATION</div>
+      <h2 style="margin:0;font:800 clamp(26px,4vw,34px)/1.1 Archivo;letter-spacing:-.02em;max-width:680px">A forecast is only as good as its calibration.</h2>
+      <p style="margin:16px 0 0;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:680px">I held out ${p.n.toLocaleString()} international matches the model never saw in training, then checked whether its stated probabilities matched what actually happened.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:26px">
+        ${metric('Brier score',p.brier.toFixed(3),'vs 0.631 baseline')}
+        ${metric('Log loss',p.logloss.toFixed(3),'vs 1.099 uniform guess')}
+        ${metric('Outcome accuracy',(p.accuracy*100).toFixed(1)+'%','vs 48.5% home-bias')}
+        ${metric('Calibration error',(p.calib_error*100).toFixed(1)+'%','mean abs. deviation')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;align-items:stretch">
+        <div class="card" style="flex:1 1 340px;min-width:300px;padding:22px 24px">
+          <div style="font:700 15px Archivo;margin-bottom:2px">Reliability curve</div>
+          <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:14px">Predicted probability vs observed frequency</div>
+          <svg viewBox="0 0 300 300" style="width:100%;height:auto;max-width:360px;display:block;margin:0 auto">
+            <rect x="40" y="20" width="240" height="240" fill="#FAFAF7" stroke="#E6E3DB"/>
+            <line x1="40" y1="260" x2="280" y2="20" stroke="#C9C5BA" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <polyline points="${poly}" fill="none" stroke="#0B6E4F" stroke-width="2.5"/>${circles}
+            <text x="160" y="291" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9094A0">Predicted →</text>
+            <text x="15" y="140" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#9094A0" transform="rotate(-90 15 140)">Observed →</text>
+          </svg>
+          <div style="font:400 12px/1.5 Archivo;color:#9094A0;margin-top:10px;text-align:center">Points near the dashed line mean the model's confidence is honest — when it says 30%, it happens about 30% of the time.</div>
+        </div>
+        <div style="flex:1 1 300px;min-width:280px;display:flex;flex-direction:column;gap:18px">
+          <div style="background:#0B3D2E;border-radius:13px;padding:22px 24px;color:#fff">
+            <div class="mono" style="font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8FD3B6">This tournament so far</div>
+            <div style="font:800 38px/1 Archivo;margin:13px 0 7px">${tr.called} / ${tr.total}</div>
+            <div style="font:500 13.5px/1.5 Archivo;color:#CFE8DC">match favourites called correctly (${tr.total?Math.round(tr.called/tr.total*100):0}%) — updated as results come in.</div>
+          </div>
+          <div class="card" style="padding:20px 22px">
+            <div style="font:700 14px Archivo;margin-bottom:10px">Where it's weakest — honestly</div>
+            <p style="font:400 13.5px/1.55 Archivo;color:#5B5E66;margin:0">The model has no knowledge of injuries, red cards, or tactical match-ups, and it slightly under-rates rare upsets. It's a transparent baseline you can reason about — not a betting oracle.</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  },
+
+  footer(){ return `<div style="text-align:center;padding:40px 0 56px;margin-top:32px;border-top:1px solid #E2DFD6"><div style="font:500 13.5px Archivo;color:#7A7D85">Built with a transparent, calibrated Poisson model · <a href="https://github.com/mikkaarumugam/world-cup" style="color:#0B6E4F;font-weight:600;border-bottom:1px solid #bfe0d3">Source on GitHub</a></div></div>`; },
+};
+App.init();
+</script>
+</body>
+</html>
