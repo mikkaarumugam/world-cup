@@ -30,7 +30,7 @@
 <div id="app"></div>
 <script>
 const App = {
-  state:{tab:'match', teamA:'Brazil', teamB:'Argentina', openA:false, openB:false, teamsToShow:16, oddsTeam:'Argentina'},
+  state:{tab:'match', teamA:'Brazil', teamB:'Argentina', openA:false, openB:false, openOdds:false, teamsToShow:16, oddsTeam:'Argentina'},
   data:null,
 
   async init(){
@@ -40,7 +40,7 @@ const App = {
     if(!t.find(x=>x.name===this.state.teamB)) this.state.teamB = t[1].name;
     this.state.oddsTeam = t[0].name;
     document.addEventListener('click', e=>{
-      if(!e.target.closest('.dd')){ this.state.openA=this.state.openB=false; this.render(); }
+      if(!e.target.closest('.dd')){ this.state.openA=this.state.openB=this.state.openOdds=false; this.render(); }
     });
     this.render();
   },
@@ -119,6 +119,35 @@ const App = {
       </button>${menu}</div>`;
   },
 
+  oddsDropdown(){
+    const s=this.state, sel=this.team(s.oddsTeam), open=s.openOdds;
+    const teams=this.data.teams.slice().sort((a,b)=>a.name.localeCompare(b.name));
+    const menu = open? `<div class="menu" style="left:auto;right:0;width:240px">${teams.map(t=>`<button onclick="App.setState({oddsTeam:'${t.name.replace(/'/g,"\\'")}',openOdds:false})">${this.badge(t,22)}<span style="font:500 14px Archivo">${t.name}</span></button>`).join('')}</div>`:'';
+    return `<div class="dd" style="position:relative">
+      <button onclick="App.setState({openOdds:${!open}})" style="display:flex;align-items:center;gap:9px;padding:9px 13px;background:#fff;border:1px solid #E2DFD6;border-radius:10px;cursor:pointer">${this.badge(sel,22)}<span style="font:600 14.5px Archivo">${sel.name}</span><span style="color:#9094A0;font-size:12px">▾</span></button>${menu}</div>`;
+  },
+
+  upcomingCard(){
+    const up=this.data.upcoming.map(f=>{
+      const ph=Math.round(f.ph*100), pa=Math.round(f.pa*100);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0EEE7">
+        <span class="mono" style="width:46px;min-width:46px;font-size:11px;color:#9094A0">${f.date}</span>
+        <div style="display:flex;align-items:center;gap:7px;width:140px;min-width:140px;justify-content:flex-end;text-align:right"><span style="font:600 13.5px Archivo">${f.home}</span>${this.badge({iso:f.home_iso},20)}</div>
+        <span class="mono" style="width:30px;min-width:30px;text-align:right;font-size:12px;font-weight:700;color:#2563eb">${ph}%</span>
+        <div title="${f.home} ${ph}% / Draw ${Math.round(f.pd*100)}% / ${f.away} ${pa}%" style="flex:1;display:flex;height:15px;border-radius:5px;overflow:hidden;min-width:70px">
+          <div style="width:${(f.ph*100).toFixed(1)}%;background:#2563eb"></div><div style="width:${(f.pd*100).toFixed(1)}%;background:#94a3b8"></div><div style="width:${(f.pa*100).toFixed(1)}%;background:#ef4444"></div>
+        </div>
+        <span class="mono" style="width:30px;min-width:30px;font-size:12px;font-weight:700;color:#ef4444">${pa}%</span>
+        <div style="display:flex;align-items:center;gap:7px;width:140px;min-width:140px">${this.badge({iso:f.away_iso},20)}<span style="font:600 13.5px Archivo">${f.away}</span></div>
+      </div>`;
+    }).join('');
+    return `<div class="card" style="padding:22px 24px;margin-top:18px">
+      <div style="font:700 16px Archivo;margin-bottom:3px">Upcoming matches</div>
+      <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:14px">The model's call on the next fixtures, at a neutral venue (<span style="color:#2563eb;font-weight:600">left team</span> · draw · <span style="color:#ef4444;font-weight:600">right team</span>).</div>
+      <div style="overflow-x:auto"><div style="min-width:560px">${up}</div></div>
+    </div>`;
+  },
+
   matchPanel(){
     const m=this.analyze();
     const pA=Math.round(m.win*100), pD=Math.round(m.draw*100), pB=Math.round(m.loss*100);
@@ -167,24 +196,12 @@ const App = {
           <div style="display:flex;justify-content:space-between;margin-top:14px" class="mono"><span style="font-size:11px;color:#9094A0">↓ ${m.A.name} goals</span><span style="font-size:11px;color:#9094A0">${m.B.name} goals →</span></div>
         </div>
       </div>
+      ${this.upcomingCard()}
     </div>`;
   },
 
   oddsPanel(){
     const s=this.state, d=this.data;
-    const up=d.upcoming.map(f=>{
-      const ph=Math.round(f.ph*100), pa=Math.round(f.pa*100);
-      return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0EEE7">
-        <span class="mono" style="width:46px;min-width:46px;font-size:11px;color:#9094A0">${f.date}</span>
-        <div style="display:flex;align-items:center;gap:7px;width:140px;min-width:140px;justify-content:flex-end;text-align:right"><span style="font:600 13.5px Archivo">${f.home}</span>${this.badge({iso:f.home_iso},20)}</div>
-        <span class="mono" style="width:30px;min-width:30px;text-align:right;font-size:12px;font-weight:700;color:#2563eb">${ph}%</span>
-        <div title="${f.home} ${ph}% / Draw ${Math.round(f.pd*100)}% / ${f.away} ${pa}%" style="flex:1;display:flex;height:15px;border-radius:5px;overflow:hidden;min-width:70px">
-          <div style="width:${(f.ph*100).toFixed(1)}%;background:#2563eb"></div><div style="width:${(f.pd*100).toFixed(1)}%;background:#94a3b8"></div><div style="width:${(f.pa*100).toFixed(1)}%;background:#ef4444"></div>
-        </div>
-        <span class="mono" style="width:30px;min-width:30px;font-size:12px;font-weight:700;color:#ef4444">${pa}%</span>
-        <div style="display:flex;align-items:center;gap:7px;width:140px;min-width:140px">${this.badge({iso:f.away_iso},20)}<span style="font:600 13.5px Archivo">${f.away}</span></div>
-      </div>`;
-    }).join('');
     const sorted=d.teams.slice().sort((a,b)=>b.title-a.title);
     const visible=sorted.slice(0,s.teamsToShow);
     const rows=visible.map(t=>{
@@ -200,11 +217,6 @@ const App = {
     const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
-      <div class="card" style="padding:22px 24px;margin-bottom:18px">
-        <div style="font:700 16px Archivo;margin-bottom:3px">Upcoming matches</div>
-        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:14px">The model's call on the next fixtures, at a neutral venue (<span style="color:#2563eb;font-weight:600">left team</span> · draw · <span style="color:#ef4444;font-weight:600">right team</span>).</div>
-        <div style="overflow-x:auto"><div style="min-width:560px">${up}</div></div>
-      </div>
       <p style="margin:0 0 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
       <div class="card" style="padding:20px 22px;margin-bottom:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="eyebrow">Teams to show</span><span class="mono" style="font-weight:700;font-size:15px;color:#0B6E4F">${s.teamsToShow}</span></div>
@@ -216,7 +228,7 @@ const App = {
         ${rows}
       </div>
       <div class="card" style="padding:22px 24px;margin-bottom:18px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">${this.badge(ot,32)}<div><div style="font:700 16px Archivo">${ot.name}: road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">Probability of reaching each round. Showing the favourite; click any team in the list above to switch.</div></div></div>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px"><div><div style="font:700 16px Archivo">Road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">A team's chance of reaching each knockout round.</div></div>${this.oddsDropdown()}</div>
         <div style="margin-top:18px">${funnel}</div>
       </div>
       <div class="card" style="padding:22px 24px">
