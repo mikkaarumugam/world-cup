@@ -164,6 +164,68 @@ The full narrative, with every experiment and lesson, is in
 
 ---
 
+## What I learned
+
+I started this with zero machine-learning experience. Here's the map of concepts
+and skills I picked up building it - each one is explained in plain English, in
+context, in [`LEARNING_LOG.md`](LEARNING_LOG.md).
+
+**Python & data wrangling**
+- Virtual environments (an isolated, per-project toolbox) and managing libraries.
+- `pandas`: loading CSVs into DataFrames, filtering, and reshaping.
+- Handling missing data (NaN, `dropna`) and why column **dtypes** matter.
+- Reshaping data from **wide to long** so the model gets one clean target per row.
+- **Refactoring** a script into reusable functions without changing its behaviour,
+  and the `sys.argv` / `if __name__ == "__main__"` pattern that makes one file work
+  as both a library and a CLI.
+
+**Statistical modelling**
+- **Poisson regression / GLMs**: modelling goal counts, and the formula syntax
+  `goals ~ C(team) + C(opponent) + home`.
+- The idea of a **parameter the model learns from data** (attack/defence/home)
+  versus a number a human hand-codes, found by **maximum likelihood** (`.fit()`).
+- The **log link**: why effects multiply, and using `exp()` to read a coefficient
+  back as a goal multiplier.
+- Checking **convergence**, and diagnosing **separation** - how teams with tiny or
+  too-perfect records push coefficients to infinity and break the fit (fixed with a
+  fixed-point filtering loop).
+- Turning expected goals into outcomes with the **Poisson pmf** and a **scoreline
+  grid**, the **independence assumption** it relies on, and the **Dixon-Coles**
+  correction that softens it for low scores.
+
+**Evaluating honestly (not fooling yourself)**
+- **Backtesting**: replaying real history instead of inventing test cases.
+- Splitting train/test by **time, not randomly**, to avoid **data leakage**.
+- Always beating a sensible **baseline** before believing the model adds value.
+- Scoring probabilities with **log-loss** and **Brier score**, and why raw
+  accuracy is misleading on its own.
+- **Calibration**: checking that "30% chance" really happens ~30% of the time.
+- **Cold start**: a model can't predict a team it never saw in training.
+
+**Experimentation & rigour**
+- The **3-way train / validation / test split**, and how repeatedly tuning against
+  a test set **overfits** it.
+- **Rolling-origin cross-validation** as a harder-to-game optimization metric.
+- **Autoresearch** (Karpathy-style): a measure → keep-if-better → revert loop, with
+  every experiment logged.
+- That a plausible idea can be **wrong** - downweighting friendlies hurt and was
+  rejected, which is as useful a result as the wins.
+- The **information floor**: measuring the best score *this* model could possibly
+  get, realising we'd hit it, and **knowing when to stop tuning** and invest in new
+  data instead.
+
+**Simulation**
+- **Monte Carlo**: estimating tournament odds by playing the World Cup 3,000 times
+  and counting outcomes, with a **fixed random seed** for reproducible results.
+
+**Shipping it**
+- Generating a **static site** from a trained model (exporting the model's outputs
+  to JSON the frontend reads).
+- **CI/CD with GitHub Actions**: a scheduled (**cron**) pipeline that retrains on
+  fresh data and **auto-deploys** to GitHub Pages daily.
+
+---
+
 ## Repo map
 
 | File | What it is |
