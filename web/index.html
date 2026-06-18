@@ -92,8 +92,8 @@ const App = {
   masthead(){ const d=this.data; return `
     <div style="padding:46px 0 30px;border-bottom:1px solid #E2DFD6;text-align:center">
       <div class="mono" style="font-weight:700;font-size:12px;letter-spacing:.16em;color:#0B6E4F;margin-bottom:18px">FIFA WORLD CUP 2026 · FORECAST MODEL</div>
-      <h1 style="margin:0 auto;font:800 clamp(30px,5.2vw,50px)/1.04 Archivo;letter-spacing:-.025em;max-width:780px">Every match and the whole bracket, in probabilities.</h1>
-      <p style="margin:20px auto 0;font:400 clamp(15px,2.2vw,18px)/1.55 Archivo;color:#4C4F57;max-width:620px">Win, draw and loss odds plus full-tournament simulations from a transparent Poisson model. It's fit on real international results, validated against held-out matches, and updated as games are played.</p>
+      <h1 style="margin:0 auto;font:800 clamp(30px,5.2vw,50px)/1.04 Archivo;letter-spacing:-.025em;max-width:780px;text-wrap:balance">Every match and the whole bracket, in probabilities.</h1>
+      <p style="margin:20px auto 0;font:400 clamp(15px,2.2vw,18px)/1.55 Archivo;color:#4C4F57;max-width:620px;text-wrap:balance">Win, draw and loss odds plus full-tournament simulations from a transparent Poisson model. It's fit on real international results, validated against held-out matches, and updated as games are played.</p>
       <div style="display:flex;flex-wrap:wrap;gap:30px;margin-top:28px;justify-content:center">
         ${this.stat(d.n_matches.toLocaleString(),'Matches trained')}
         <div style="width:1px;background:#E2DFD6"></div>
@@ -221,7 +221,7 @@ const App = {
     const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
-      <p style="margin:0 auto 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px;text-align:center">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
+      <p style="margin:0 auto 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px;text-align:center;text-wrap:balance">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
       <div class="card" style="padding:20px 22px;margin-bottom:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="eyebrow">Teams to show</span><span class="mono" style="font-weight:700;font-size:15px;color:#0B6E4F">${s.teamsToShow}</span></div>
         <input type="range" min="8" max="48" value="${s.teamsToShow}" oninput="App.setState({teamsToShow:+this.value})" style="width:100%;background:linear-gradient(to right,#0B6E4F 0%,#0B6E4F ${pct}%,#DCD9D0 ${pct}%,#DCD9D0 100%)">
@@ -270,8 +270,8 @@ const App = {
 
     return `<div style="padding:34px 0 10px">
       <div class="mono" style="font-weight:700;font-size:12px;letter-spacing:.14em;color:#0B6E4F;margin-bottom:13px;text-align:center">VALIDATION</div>
-      <h2 style="margin:0 auto;font:800 clamp(26px,4vw,34px)/1.1 Archivo;letter-spacing:-.02em;max-width:680px;text-align:center">A forecast is only as good as its calibration.</h2>
-      <p style="margin:16px auto 0;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:680px;text-align:center">I held out ${p.n.toLocaleString()} international matches the model never saw in training, then checked whether its stated probabilities matched what actually happened.</p>
+      <h2 style="margin:0 auto;font:800 clamp(26px,4vw,34px)/1.1 Archivo;letter-spacing:-.02em;max-width:680px;text-align:center;text-wrap:balance">A forecast is only as good as its calibration.</h2>
+      <p style="margin:16px auto 0;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:680px;text-align:center;text-wrap:balance">I held out ${p.n.toLocaleString()} international matches the model never saw in training, then checked whether its stated probabilities matched what actually happened.</p>
       <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:26px">
         ${metric('Brier score',p.brier.toFixed(3),'vs 0.631 baseline')}
         ${metric('Log loss',p.logloss.toFixed(3),'vs 1.099 uniform guess')}
