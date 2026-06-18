@@ -51,7 +51,15 @@ def whole_percents(values):
 st.set_page_config(page_title="World Cup 2026 Predictor", page_icon="⚽")
 st.title("⚽ World Cup 2026 Predictor")
 st.caption(f"Win/draw/loss odds and tournament simulations from a transparent "
-           f"Poisson model — trained on {n_matches:,} international matches since 2010.")
+           f"Poisson model — trained on {n_matches:,} international matches since 2010. "
+           f"Auto-updates with new results; or refresh now:")
+
+if st.button("🔄 Refresh with latest results",
+             help="Re-download today's results and retrain (~25s)"):
+    ensure_fresh_data(max_age_hours=0)   # force a fresh download right now
+    get_model_and_teams.clear()
+    get_title_odds.clear()
+    st.rerun()
 
 tab_match, tab_cup = st.tabs(["⚔️ Match predictor", "🏆 World Cup odds"])
 
