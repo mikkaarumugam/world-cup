@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from predictor import (load_matches, drop_sparse_teams, train_model,
-                       match_probabilities, RHO)  # noqa
+                       match_probabilities, ensure_fresh_data, RHO)  # noqa
 from world_cup import simulate_tournament
 from evaluate import model_probs, actual_outcome, TEST_START
 from flags import _ISO2, _SPECIAL  # noqa
@@ -180,6 +180,7 @@ def fixtures_and_recent(model, n_up=10, n_recent=6):
 
 
 def main():
+    ensure_fresh_data(max_age_hours=0)   # always pull the latest results before exporting
     matches = load_matches()
     model = train_model(matches)
     baseline, attack, defence = team_ratings(model)
