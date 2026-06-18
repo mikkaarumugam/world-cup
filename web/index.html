@@ -156,6 +156,8 @@ const App = {
     else if(m.win>=m.loss) fav=`<span style="font:700 16px Archivo">${m.A.name} favoured at ${pA}% to win</span>`;
     else fav=`<span style="font:700 16px Archivo">${m.B.name} favoured at ${pB}% to win</span>`;
     const favColor = (m.draw>=m.win&&m.draw>=m.loss)?'#5B5E66':(m.win>=m.loss?m.A.color:m.B.color);
+    const drawTop = (m.draw>=m.win&&m.draw>=m.loss);
+    const drawRisk = (!drawTop && m.draw>=0.30) ? `<span style="display:inline-flex;align-items:center;gap:6px;background:#FBEED9;color:#8A5A12;font:600 12.5px Archivo;padding:6px 12px;border-radius:999px;white-space:nowrap">⚖️ Tight game · draw ${pD}% likely</span>` : '';
     const seg=(w,p,c)=>`<div style="width:${(w).toFixed(2)}%;background:${c};display:flex;align-items:center;justify-content:center;color:#fff" class="mono">${p>=8?p+'%':''}</div>`;
     const scorelines=m.top.map(t=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
       <span class="mono" style="width:128px;min-width:128px;font-weight:600;font-size:14px">${m.A.name} ${t.i}–${t.j} ${m.B.name}</span>
@@ -173,7 +175,7 @@ const App = {
         <button onclick="App.setState({teamA:'${m.B.name.replace(/'/g,"\\'")}',teamB:'${m.A.name.replace(/'/g,"\\'")}'})" title="Swap" style="margin-bottom:1px;width:44px;height:44px;min-width:44px;border-radius:11px;background:#15171C;color:#fff;border:none;cursor:pointer;font-size:16px">⇄</button>
         ${this.dropdown('B')}
       </div>
-      <div class="card" style="display:flex;align-items:center;gap:13px;padding:15px 18px;margin-top:26px;border-left:3px solid ${favColor}">${fav}</div>
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:15px 18px;margin-top:26px;border-left:3px solid ${favColor}">${fav}${drawRisk}</div>
       <div style="margin-top:24px">
         <div style="display:flex;height:48px;border-radius:11px;overflow:hidden;border:1px solid #E7E4DC;font:700 16px 'JetBrains Mono'">
           ${seg(m.win*100,pA,m.A.color)}${seg(m.draw*100,pD,'#8B8F97')}${seg(m.loss*100,pB,m.B.color)}
