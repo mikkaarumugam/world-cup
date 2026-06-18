@@ -164,7 +164,10 @@ const App = {
     // heatmap 0..5
     let hmax=0; for(let i=0;i<=5;i++)for(let j=0;j<=5;j++)hmax=Math.max(hmax,m.grid[i][j]);
     const heat=[...Array(6)].map((_,i)=>`<div style="display:flex;gap:4px;margin-bottom:4px;align-items:center"><div class="mono" style="width:30px;text-align:center;font-size:11px;color:#9094A0">${i}</div>${[...Array(6)].map((_,j)=>{const p=m.grid[i][j];const a=Math.min(1,Math.sqrt(p/hmax)*0.95);const txt=a>0.5?'#fff':'#41444B';return `<div class="mono" style="width:46px;height:34px;min-width:46px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:11px;background:rgba(11,110,79,${a.toFixed(3)});color:${txt}">${p>=0.01?Math.round(p*100):''}</div>`;}).join('')}</div>`).join('');
-    return `<div style="padding:34px 0 10px">
+    return `<div style="padding:34px 0 4px">
+      ${this.upcomingCard()}
+      <div style="font:700 18px Archivo;margin:34px 0 6px">Try any matchup</div>
+      <div style="font:400 13px Archivo;color:#9094A0;margin-bottom:16px">Pick two teams to see the model's win / draw / loss odds at a neutral venue.</div>
       <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
         ${this.dropdown('A')}
         <button onclick="App.setState({teamA:'${m.B.name.replace(/'/g,"\\'")}',teamB:'${m.A.name.replace(/'/g,"\\'")}'})" title="Swap" style="margin-bottom:1px;width:44px;height:44px;min-width:44px;border-radius:11px;background:#15171C;color:#fff;border:none;cursor:pointer;font-size:16px">⇄</button>
@@ -196,7 +199,6 @@ const App = {
           <div style="display:flex;justify-content:space-between;margin-top:14px" class="mono"><span style="font-size:11px;color:#9094A0">↓ ${m.A.name} goals</span><span style="font-size:11px;color:#9094A0">${m.B.name} goals →</span></div>
         </div>
       </div>
-      ${this.upcomingCard()}
     </div>`;
   },
 
