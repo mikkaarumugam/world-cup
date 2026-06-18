@@ -255,10 +255,10 @@ const App = {
           <div style="background:#0B3D2E;border-radius:13px;padding:24px;color:#fff">
             <div class="mono" style="font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8FD3B6">This tournament so far</div>
             <div style="font:800 46px/1 Archivo;margin:14px 0 6px">${decPct}%</div>
-            <div style="font:600 13.5px/1.5 Archivo;color:#EAF6EF">of decisive matches called correctly <span class="mono" style="color:#8FD3B6">(${tr.decisive_called} of ${tr.decisive})</span></div>
+            <div style="font:600 13.5px/1.5 Archivo;color:#EAF6EF">of group games that produced a winner, the model picked the right team <span class="mono" style="color:#8FD3B6">(${tr.decisive_called} of ${tr.decisive})</span></div>
             <div style="height:1px;background:rgba(255,255,255,.14);margin:16px 0"></div>
-            <div style="display:flex;align-items:baseline;gap:9px"><span class="mono" style="font:800 22px Archivo;color:#fff">${tr.top2}/${tr.total}</span><span style="font:500 12.5px Archivo;color:#CFE8DC">results landed in the model's top-two outcomes</span></div>
-            <div style="font:400 12px/1.5 Archivo;color:#9FC4B2;margin-top:12px">Draws (${drawPct}% of games so far) are near coin-flips for any model, so they're set aside from the headline number.</div>
+            <div style="display:flex;align-items:baseline;gap:9px"><span class="mono" style="font:800 22px Archivo;color:#fff">${tr.top2}/${tr.total}</span><span style="font:500 12.5px Archivo;color:#CFE8DC">of all ${tr.total} played results landed in the model's top-two outcomes</span></div>
+            <div style="font:400 12px/1.5 Archivo;color:#9FC4B2;margin-top:12px">The other ${tr.draws} games were draws (${drawPct}%) — near coin-flips that no model predicts well — so they're set aside from the headline.</div>
           </div>
           <div class="card" style="padding:20px 22px">
             <div style="font:700 14px Archivo;margin-bottom:10px">Where it's weakest — honestly</div>
