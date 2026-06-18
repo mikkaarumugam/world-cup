@@ -65,16 +65,33 @@ def expected_goals(model, team_a, team_b, home_a=0, home_b=0):
     return xg.iloc[0], xg.iloc[1]
 
 
-def match_probabilities(model, team_a, team_b, home_a=0, home_b=0, max_goals=10):
-    """Return (team_a win, draw, team_b win) probabilities. Neutral by default."""
+def scoreline_grid(model, team_a, team_b, home_a=0, home_b=0, max_goals=10):
+    """Return (xg_a, xg_b, grid) where grid[i, j] = P(team_a scores i, team_b j)."""
     xg_a, xg_b = expected_goals(model, team_a, team_b, home_a, home_b)
     a_scores = poisson.pmf(np.arange(max_goals + 1), xg_a)
     b_scores = poisson.pmf(np.arange(max_goals + 1), xg_b)
     grid = np.outer(a_scores, b_scores)         # grid[i,j] = P(a=i and b=j)
+    return xg_a, xg_b, grid
+
+
+def match_probabilities(model, team_a, team_b, home_a=0, home_b=0, max_goals=10):
+    """Return (team_a win, draw, team_b win) probabilities. Neutral by default."""
+    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b, max_goals)
     a_win = np.tril(grid, -1).sum()             # a scored more
     draw = np.trace(grid)                       # equal score
     b_win = np.triu(grid, 1).sum()              # b scored more
     return a_win, draw, b_win
+
+
+def top_scorelines(model, team_a, team_b, home_a=0, home_b=0, n=5):
+    """Return the n most likely exact scorelines as [((a_goals, b_goals), prob), ...]."""
+    _, _, grid = scoreline_grid(model, team_a, team_b, home_a, home_b)
+    flat_order = np.argsort(grid, axis=None)[::-1][:n]   # indices of largest probs
+    results = []
+    for idx in flat_order:
+        i, j = np.unravel_index(idx, grid.shape)         # back to (a_goals, b_goals)
+        results.append(((int(i), int(j)), float(grid[i, j])))
+    return results
 
 
 if __name__ == "__main__":
