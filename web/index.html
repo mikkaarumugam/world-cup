@@ -258,6 +258,8 @@ const App = {
 
     const decPct=tr.decisive?Math.round(tr.decisive_called/tr.decisive*100):0;
     const drawPct=tr.total?Math.round(tr.draws/tr.total*100):0;
+    const upsetsLost=(1-p.draw_share)*(1-p.decisive_acc);
+    const drawsLost=Math.max(0,1-p.accuracy-upsetsLost);
     const rec=this.data.recent.map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #F2F0E9" title="${r.home} ${r.hs}-${r.as} ${r.away}">
       <span class="mono" style="width:42px;min-width:42px;font-size:10.5px;color:#9094A0">${r.date}</span>
       ${this.badge({iso:r.home_iso},18)}
@@ -276,7 +278,21 @@ const App = {
         ${metric('Outcome accuracy',(p.accuracy*100).toFixed(1)+'%','vs 48.5% home-bias')}
         ${metric('Calibration error',(p.calib_error*100).toFixed(1)+'%','mean abs. deviation')}
       </div>
-      <div style="font:400 13.5px/1.6 Archivo;color:#5B5E66;margin-top:14px;max-width:780px">Overall accuracy is held down by draws (${(p.draw_share*100).toFixed(0)}% of matches, near coin-flips that no model predicts well). On the games that produced a winner, the model picks it <strong style="color:#15171C">${(p.decisive_acc*100).toFixed(0)}%</strong> of the time, and the actual result lands in its <strong style="color:#15171C">top two outcomes ${(p.top2*100).toFixed(0)}%</strong> of the time.</div>
+      <div class="card" style="padding:24px 26px;margin-top:16px">
+        <div style="font:700 17px Archivo;margin-bottom:3px">Why is outcome accuracy ${(p.accuracy*100).toFixed(0)}%?</div>
+        <div style="font:400 13px/1.55 Archivo;color:#6B6E76;margin-bottom:16px">Every match lands in one of three buckets, and two of them are football no model can crack.</div>
+        <div style="display:flex;height:40px;border-radius:9px;overflow:hidden;font:700 13px 'JetBrains Mono';color:#fff">
+          <div title="Called correctly" style="width:${(p.accuracy*100).toFixed(1)}%;background:#0B6E4F;display:flex;align-items:center;justify-content:center">${(p.accuracy*100).toFixed(0)}%</div>
+          <div title="Draws" style="width:${(drawsLost*100).toFixed(1)}%;background:#94a3b8;display:flex;align-items:center;justify-content:center">${(drawsLost*100).toFixed(0)}%</div>
+          <div title="Upsets" style="width:${(upsetsLost*100).toFixed(1)}%;background:#D98A2B;display:flex;align-items:center;justify-content:center">${(upsetsLost*100).toFixed(0)}%</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:18px;margin:12px 2px 18px;font:500 12.5px Archivo;color:#5B5E66">
+          <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#0B6E4F;margin-right:6px;vertical-align:middle"></span>Called correctly</span>
+          <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#94a3b8;margin-right:6px;vertical-align:middle"></span>Draws (unpredictable)</span>
+          <span><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:#D98A2B;margin-right:6px;vertical-align:middle"></span>Upsets of the favourite</span>
+        </div>
+        <p style="font:400 14px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0"><strong style="color:#15171C">Draws</strong> are near coin-flips: even in the evenest matches a home win (~48%) is still likelier than a draw (~27%), so a draw is never the smart single pick. <strong style="color:#15171C">Upsets</strong> aren't mistakes either: when the model makes a team a 65% favourite it's saying they lose 35% of the time, and sometimes they do. On the games that are genuinely predictable the model is right <strong style="color:#15171C">${(p.decisive_acc*100).toFixed(0)}%</strong> of the time, and the real result is in its top two outcomes <strong style="color:#15171C">${(p.top2*100).toFixed(0)}%</strong> of the time. For scale: random guessing 33%, always pick the home team 48.5%, this model ${(p.accuracy*100).toFixed(0)}%. Low-scoring football is high-variance, so the strongest models and bookmakers all sit in this range.</p>
+      </div>
       <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;align-items:flex-start">
         <div class="card" style="flex:1 1 360px;min-width:320px;padding:22px 24px">
           <div style="font:700 16px Archivo;margin-bottom:3px">Is the model's confidence honest?</div>
