@@ -105,8 +105,10 @@ with tab_match:
 # --- Tab 2: full tournament odds (Monte Carlo) ------------------------------
 with tab_cup:
     st.caption("From simulating the rest of the tournament 3,000 times — real groups "
-               "& results so far, the model plays out the rest.")
-    odds = get_title_odds().head(16).reset_index(names="Team")
+               "& results so far, the model plays out the rest. All 48 teams are "
+               "simulated; choose how many to show.")
+    n_show = st.slider("Teams to show", min_value=8, max_value=48, value=16)
+    odds = get_title_odds().head(n_show).reset_index(names="Team")
     odds["Flag"] = odds["Team"].map(with_flag)
 
     st.altair_chart(
