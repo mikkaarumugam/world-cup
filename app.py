@@ -110,7 +110,7 @@ st.markdown(f"""
 <div class="hero">
   <h1>⚽ World Cup 2026 Predictor</h1>
   <p>Win/draw/loss odds and full-tournament simulations from a transparent Poisson
-     model — trained on {n_matches:,} international matches and auto-updating with new results.</p>
+     model - trained on {n_matches:,} international matches and auto-updating with new results.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -142,19 +142,19 @@ with tab_match:
                     unsafe_allow_html=True)
 
         if wd >= wa and wd >= wb:
-            st.info(f"🤝 Too close to call — a draw is the most likely single result ({wd}%).")
+            st.info(f"🤝 Too close to call - a draw is the most likely single result ({wd}%).")
         elif wa >= wb:
-            st.success(f"⭐ {with_flag(team_a)} favoured — {wa}% to win.")
+            st.success(f"⭐ {with_flag(team_a)} favoured - {wa}% to win.")
         else:
-            st.success(f"⭐ {with_flag(team_b)} favoured — {wb}% to win.")
+            st.success(f"⭐ {with_flag(team_b)} favoured - {wb}% to win.")
 
         prob_bar(team_a, team_b, wa, wd, wb)
 
         st.divider()
         xg_a, xg_b = expected_goals(model, team_a, team_b)
         c1, c2 = st.columns(2)
-        c1.metric(f"{with_flag(team_a)} — expected goals", f"{xg_a:.2f}")
-        c2.metric(f"{with_flag(team_b)} — expected goals", f"{xg_b:.2f}")
+        c1.metric(f"{with_flag(team_a)} - expected goals", f"{xg_a:.2f}")
+        c2.metric(f"{with_flag(team_b)} - expected goals", f"{xg_b:.2f}")
 
         scorelines = top_scorelines(model, team_a, team_b, n=5)
         (ti, tj), tp = scorelines[0]
@@ -165,7 +165,7 @@ with tab_match:
 
 # --- Tab 2: full tournament odds (Monte Carlo) ------------------------------
 with tab_cup:
-    st.caption("From simulating the rest of the tournament 3,000 times — real groups "
+    st.caption("From simulating the rest of the tournament 3,000 times - real groups "
                "& results so far, the model plays out the rest. All 48 teams are simulated.")
     n_show = st.slider("Teams to show", min_value=8, max_value=48, value=16)
     odds = get_title_odds().head(n_show).reset_index(names="Team")
@@ -213,7 +213,7 @@ with st.expander("🔧 How it works"):
     st.markdown(
         """
         Each team has a learned **attack** and **defence** strength (plus a home
-        bonus), fitted with a **Poisson regression** on historical goals — weighting
+        bonus), fitted with a **Poisson regression** on historical goals - weighting
         recent matches more, with a Dixon–Coles low-score correction. For a matchup
         we get expected goals for each side, then the **Poisson distribution** gives
         every scoreline's chance → win / draw / loss. Tournament odds come from

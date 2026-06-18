@@ -1,4 +1,4 @@
-"""Generate web/data.json — everything the static frontend needs, from our model.
+"""Generate web/data.json - everything the static frontend needs, from our model.
 
 The frontend computes match odds client-side from each team's attack/defence
 multipliers (+ baseline and Dixon-Coles rho), which reproduces the Python model
@@ -101,7 +101,7 @@ def tournament_tracker(model):
     """How the model is doing on played 2026 World Cup matches so far.
 
     Top-pick accuracy is harsh in the group stage (draws are near coin-flips), so
-    we also report decisive-match accuracy and top-2 coverage — fairer, fuller.
+    we also report decisive-match accuracy and top-2 coverage - fairer, fuller.
     """
     raw = pd.read_csv("data/results.csv")
     raw["date"] = pd.to_datetime(raw["date"])

@@ -1,13 +1,13 @@
-# Autoresearch brief — World Cup match predictor
+# Autoresearch brief - World Cup match predictor
 
 Goal: find the best-generalizing model we can honestly defend, with every
-experiment logged. Modest gains expected — the model is already near its
+experiment logged. Modest gains expected - the model is already near its
 information floor (see LEARNING_LOG), so big jumps would need new features/data,
 not tuning. The value is the rigorous, documented process.
 
 ## The metric (optimize this)
 Run `./.venv/bin/python evaluate.py --cv` and minimize **CV log-loss** (lower is
-better) — the average across rolling cross-validation folds. Current best: **0.8567**.
+better) - the average across rolling cross-validation folds. Current best: **0.8567**.
 Do NOT optimize the single-window or test scores.
 
 ## The loop
@@ -18,7 +18,7 @@ Do NOT optimize the single-window or test scores.
    `LEARNING_LOG.md`.
 
 ## Stop when
-100 experiments done, OR ~15 consecutive experiments with no improvement —
+100 experiments done, OR ~15 consecutive experiments with no improvement -
 whichever comes first. Then report a short summary.
 
 ## Rules (do not break)
@@ -34,7 +34,7 @@ whichever comes first. Then report a short summary.
 - **Negative Binomial** family instead of Poisson (handles over-dispersion).
 - **Tune dials**: `MIN_MATCHES`, `max_goals`, the decay `HALF_LIFE_DAYS`,
   `EARLIEST_YEAR` (re-check jointly).
-- **Opponent-specific or competition-specific** effects (carefully — watch overfit).
+- **Opponent-specific or competition-specific** effects (carefully - watch overfit).
 - Combinations of the above that each individually helped.
 
 ## Final step (once, at the very end)

@@ -1,4 +1,4 @@
-# Streamlit theme — gives the app a custom look instead of the default.
+# Streamlit theme - gives the app a custom look instead of the default.
 [theme]
 primaryColor = "#16a34a"            # pitch-green accent (buttons, highlights)
 backgroundColor = "#ffffff"

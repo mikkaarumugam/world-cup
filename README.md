@@ -2,7 +2,7 @@
 
 A simple, transparent football match predictor. It learns each national team's
 **attack** and **defence** strength from historical international results, then
-predicts the chance of a **win / draw / loss** for any matchup — plus expected
+predicts the chance of a **win / draw / loss** for any matchup - plus expected
 goals and the most likely scorelines.
 
 Built as a learn-while-building first ML project. See `LEARNING_LOG.md` for the
@@ -59,10 +59,10 @@ curl -sSL -o data/results.csv \
 
 ## Files
 
-- `predictor.py` — the model engine (load, train, predict) + a CLI.
-- `app.py` — the Streamlit web app.
-- `evaluate.py` — the backtest that grades the model vs a baseline.
-- `LEARNING_LOG.md` — the build journal.
+- `predictor.py` - the model engine (load, train, predict) + a CLI.
+- `app.py` - the Streamlit web app.
+- `evaluate.py` - the backtest that grades the model vs a baseline.
+- `LEARNING_LOG.md` - the build journal.
 
 ## Possible improvements
 

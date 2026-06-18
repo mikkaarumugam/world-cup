@@ -93,7 +93,7 @@ const App = {
     <div style="padding:46px 0 30px;border-bottom:1px solid #E2DFD6">
       <div class="mono" style="font-weight:700;font-size:12px;letter-spacing:.16em;color:#0B6E4F;margin-bottom:18px">FIFA WORLD CUP 2026 · FORECAST MODEL</div>
       <h1 style="margin:0;font:800 clamp(30px,5.2vw,50px)/1.04 Archivo;letter-spacing:-.025em;max-width:760px">Every match and the whole bracket, in probabilities.</h1>
-      <p style="margin:20px 0 0;font:400 clamp(15px,2.2vw,18px)/1.55 Archivo;color:#4C4F57;max-width:660px">Win, draw and loss odds plus full-tournament simulations from a transparent Poisson model — fit on real international results, validated against held-out matches, and updated as games are played.</p>
+      <p style="margin:20px 0 0;font:400 clamp(15px,2.2vw,18px)/1.55 Archivo;color:#4C4F57;max-width:660px">Win, draw and loss odds plus full-tournament simulations from a transparent Poisson model. It's fit on real international results, validated against held-out matches, and updated as games are played.</p>
       <div style="display:flex;flex-wrap:wrap;gap:30px;margin-top:28px">
         ${this.stat(d.n_matches.toLocaleString(),'Matches trained')}
         <div style="width:1px;background:#E2DFD6"></div>
@@ -123,9 +123,9 @@ const App = {
     const m=this.analyze();
     const pA=Math.round(m.win*100), pD=Math.round(m.draw*100), pB=Math.round(m.loss*100);
     let fav;
-    if(m.draw>=m.win&&m.draw>=m.loss) fav=`<span style="font:700 16px Archivo">Level match — a draw is the single most likely result (${pD}%)</span>`;
-    else if(m.win>=m.loss) fav=`<span style="font:700 16px Archivo">${m.A.name} favoured — ${pA}% to win</span>`;
-    else fav=`<span style="font:700 16px Archivo">${m.B.name} favoured — ${pB}% to win</span>`;
+    if(m.draw>=m.win&&m.draw>=m.loss) fav=`<span style="font:700 16px Archivo">Level match: a draw is the single most likely result (${pD}%)</span>`;
+    else if(m.win>=m.loss) fav=`<span style="font:700 16px Archivo">${m.A.name} favoured at ${pA}% to win</span>`;
+    else fav=`<span style="font:700 16px Archivo">${m.B.name} favoured at ${pB}% to win</span>`;
     const favColor = (m.draw>=m.win&&m.draw>=m.loss)?'#5B5E66':(m.win>=m.loss?m.A.color:m.B.color);
     const seg=(w,p,c)=>`<div style="width:${(w).toFixed(2)}%;background:${c};display:flex;align-items:center;justify-content:center;color:#fff" class="mono">${p>=8?p+'%':''}</div>`;
     const scorelines=m.top.map(t=>`<div style="display:flex;align-items:center;gap:12px;margin-bottom:13px">
@@ -187,7 +187,7 @@ const App = {
     const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
-      <p style="margin:0 0 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated — the strongest are shown.</p>
+      <p style="margin:0 0 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
       <div class="card" style="padding:20px 22px;margin-bottom:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="eyebrow">Teams to show</span><span class="mono" style="font-weight:700;font-size:15px;color:#0B6E4F">${s.teamsToShow}</span></div>
         <input type="range" min="8" max="48" value="${s.teamsToShow}" oninput="App.setState({teamsToShow:+this.value})" style="width:100%;background:linear-gradient(to right,#0B6E4F 0%,#0B6E4F ${pct}%,#DCD9D0 ${pct}%,#DCD9D0 100%)">
@@ -198,7 +198,7 @@ const App = {
         ${rows}
       </div>
       <div class="card" style="padding:22px 24px;margin-bottom:18px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">${this.badge(ot,32)}<div><div style="font:700 16px Archivo">${ot.name} — road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">Probability of reaching each knockout round</div></div></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">${this.badge(ot,32)}<div><div style="font:700 16px Archivo">${ot.name}: road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">Probability of reaching each knockout round</div></div></div>
         <div style="margin-top:18px">${funnel}</div>
       </div>
       <div class="card" style="padding:22px 24px">
@@ -249,7 +249,7 @@ const App = {
             <text x="202" y="338" text-anchor="middle" font-family="Archivo" font-size="12" font-weight="600" fill="#5B5E66">Model said this % chance →</text>
             <text x="20" y="164" text-anchor="middle" font-family="Archivo" font-size="12" font-weight="600" fill="#5B5E66" transform="rotate(-90 20 164)">…and it happened this % →</text>
           </svg>
-          <div style="font:400 12.5px/1.5 Archivo;color:#19A463;margin-top:10px;font-weight:500">Our line hugs the dashed “perfect” line — the model's stated odds are trustworthy (within ${(p.calib_error*100).toFixed(1)} points on average).</div>
+          <div style="font:400 12.5px/1.5 Archivo;color:#19A463;margin-top:10px;font-weight:500">Our line hugs the dashed “perfect” line, so the model's stated odds are trustworthy (within ${(p.calib_error*100).toFixed(1)} points on average).</div>
         </div>
         <div style="flex:1 1 300px;min-width:280px;display:flex;flex-direction:column;gap:18px">
           <div style="background:#0B3D2E;border-radius:13px;padding:24px;color:#fff">
@@ -258,20 +258,20 @@ const App = {
             <div style="font:600 13.5px/1.5 Archivo;color:#EAF6EF">of group games that produced a winner, the model picked the right team <span class="mono" style="color:#8FD3B6">(${tr.decisive_called} of ${tr.decisive})</span></div>
             <div style="height:1px;background:rgba(255,255,255,.14);margin:16px 0"></div>
             <div style="display:flex;align-items:baseline;gap:9px"><span class="mono" style="font:800 22px Archivo;color:#fff">${tr.top2}/${tr.total}</span><span style="font:500 12.5px Archivo;color:#CFE8DC">of all ${tr.total} played results landed in the model's top-two outcomes</span></div>
-            <div style="font:400 12px/1.5 Archivo;color:#9FC4B2;margin-top:12px">The other ${tr.draws} games were draws (${drawPct}%) — near coin-flips that no model predicts well — so they're set aside from the headline.</div>
+            <div style="font:400 12px/1.5 Archivo;color:#9FC4B2;margin-top:12px">The other ${tr.draws} games were draws (${drawPct}%), near coin-flips that no model predicts well, so they're set aside from the headline.</div>
           </div>
         </div>
       </div>
       <div class="card" style="padding:26px 28px;margin-top:18px">
         <div class="eyebrow" style="margin-bottom:14px">Methodology</div>
         <div style="font:700 17px Archivo;margin-bottom:7px">How the model works</div>
-        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">Each nation gets an <strong style="color:#15171C">attack</strong> and a <strong style="color:#15171C">defence</strong> rating, fit from ${this.data.n_matches.toLocaleString()} international results since 2010 — with recent matches weighted more heavily so current form counts for more. For any fixture, those ratings give two expected-goal numbers; a <strong style="color:#15171C">Poisson</strong> process turns them into the probability of every exact scoreline, and from there into win / draw / loss odds. A small <strong style="color:#15171C">Dixon–Coles</strong> correction nudges the low-scoring results that pure independence gets slightly wrong. Tournament odds come from <strong style="color:#15171C">simulating the remaining bracket 3,000 times</strong>: real groups and completed results are fixed, every other match is sampled from the model, and the trophy is awarded at the end.</p>
+        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">Each nation gets an <strong style="color:#15171C">attack</strong> and a <strong style="color:#15171C">defence</strong> rating, fit from ${this.data.n_matches.toLocaleString()} international results since 2010, with recent matches weighted more heavily so current form counts for more. For any fixture, those ratings give two expected-goal numbers; a <strong style="color:#15171C">Poisson</strong> process turns them into the probability of every exact scoreline, and from there into win / draw / loss odds. A small <strong style="color:#15171C">Dixon-Coles</strong> correction nudges the low-scoring results that pure independence gets slightly wrong. Tournament odds come from <strong style="color:#15171C">simulating the remaining bracket 3,000 times</strong>: real groups and completed results are fixed, every other match is sampled from the model, and the trophy is awarded at the end.</p>
 
-        <div style="font:700 17px Archivo;margin:24px 0 7px">What it doesn't know — and why it could be sharper</div>
-        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">This is deliberately a <strong style="color:#15171C">transparent baseline, not a black box</strong> — so it's missing inputs a state-of-the-art model would use: player <strong style="color:#15171C">injuries and line-ups</strong>, <strong style="color:#15171C">expected-goals (xG)</strong> shot-quality data, fatigue and travel, tactics and motivation, and <strong style="color:#15171C">bookmaker odds</strong> to calibrate against. Each would make it sharper, but each needs a data source I haven't wired in yet. The model also can't see one-off, match-specific events like a red card or a late injury — which is exactly why it speaks in <strong style="color:#15171C">probabilities, not certainties</strong>.</p>
+        <div style="font:700 17px Archivo;margin:24px 0 7px">What it doesn't know (and why it could be sharper)</div>
+        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">This is deliberately a <strong style="color:#15171C">transparent baseline, not a black box</strong>, so it's missing inputs a state-of-the-art model would use: player <strong style="color:#15171C">injuries and line-ups</strong>, <strong style="color:#15171C">expected-goals (xG)</strong> shot-quality data, fatigue and travel, tactics and motivation, and <strong style="color:#15171C">bookmaker odds</strong> to calibrate against. Each would make it sharper, but each needs a data source I haven't wired in yet. The model also can't see one-off, match-specific events like a red card or a late injury, which is exactly why it speaks in <strong style="color:#15171C">probabilities, not certainties</strong>.</p>
 
         <div style="font:700 17px Archivo;margin:24px 0 7px">Why I built this</div>
-        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">This is my <strong style="color:#15171C">first machine-learning project</strong>. I built it to learn the whole pipeline end-to-end — raw data, model, honest evaluation, and a deployed app that updates itself — and I optimised for <strong style="color:#15171C">understanding and honesty over raw accuracy</strong>. Every step is simple enough to reason about, the model is graded only on matches it never saw in training, and its limits are stated plainly. Part of the lesson was knowing <strong style="color:#15171C">when to stop</strong>: the model already sits close to the information ceiling of the data it has, so the next real gains would come from better data, not more tuning.</p>
+        <p style="font:400 14.5px/1.65 Archivo;color:#4C4F57;max-width:840px;margin:0">This is my <strong style="color:#15171C">first machine-learning project</strong>. I built it to learn the whole pipeline end-to-end (raw data, model, honest evaluation, and a deployed app that updates itself), and I optimised for <strong style="color:#15171C">understanding and honesty over raw accuracy</strong>. Every step is simple enough to reason about, the model is graded only on matches it never saw in training, and its limits are stated plainly. Part of the lesson was knowing <strong style="color:#15171C">when to stop</strong>: the model already sits close to the information ceiling of the data it has, so the next real gains would come from better data, not more tuning.</p>
       </div>
     </div>`;
   },
