@@ -104,8 +104,8 @@ const App = {
     </div>`; },
   stat(v,l){ return `<div><div class="mono" style="font:800 24px/1 Archivo">${v}</div><div class="eyebrow" style="margin-top:7px">${l}</div></div>`; },
 
-  tabs(){ const s=this.state; const tb=(id,label)=>`<button onclick="App.setState({tab:'${id}'})" style="padding:14px 2px;margin-right:26px;background:none;border:none;border-bottom:2px solid ${s.tab===id?'#0B6E4F':'transparent'};color:${s.tab===id?'#15171C':'#9094A0'};font:${s.tab===id?700:600} 15px Archivo;cursor:pointer">${label}</button>`;
-    return `<div style="display:flex;align-items:center;border-bottom:1px solid #E2DFD6;margin-top:4px">${tb('match','Match predictor')}${tb('odds','World Cup odds')}${tb('perf','Model performance')}</div>`; },
+  tabs(){ const s=this.state; const tb=(id,label)=>`<button onclick="App.setState({tab:'${id}'})" style="padding:14px 2px;background:none;border:none;border-bottom:2px solid ${s.tab===id?'#0B6E4F':'transparent'};color:${s.tab===id?'#15171C':'#9094A0'};font:${s.tab===id?700:600} 15px Archivo;cursor:pointer">${label}</button>`;
+    return `<div style="display:flex;align-items:center;justify-content:center;gap:34px;border-bottom:1px solid #E2DFD6;margin-top:4px">${tb('match','Match predictor')}${tb('odds','World Cup odds')}${tb('perf','Model performance')}</div>`; },
 
   dropdown(side){
     const s=this.state, sel=this.team(side==='A'?s.teamA:s.teamB), open=side==='A'?s.openA:s.openB;
