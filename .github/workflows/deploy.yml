@@ -1,0 +1,58 @@
+name: Build and deploy site
+
+# Publishes web/ to GitHub Pages. export_data.py force-downloads the latest
+# international results, retrains the model, and regenerates web/data.json so the
+# site stays current. Runs on every push to main, once a day, and on demand.
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 06:00 UTC daily (GitHub may delay scheduled runs by a few minutes).
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+# Allow the workflow to publish to Pages via OIDC.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One Pages deployment at a time; don't cancel an in-flight deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Regenerate web/data.json from live results
+        run: python export_data.py
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
