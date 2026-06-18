@@ -66,7 +66,7 @@ def backtest_performance():
 
     eps = 1e-15
     ll = brier = 0.0
-    correct = 0
+    correct = decisive = decisive_correct = top2 = draws = 0
     bins = [[] for _ in range(10)]   # reliability: predicted prob -> outcome happened?
     for _, m in test.iterrows():
         probs = model_probs(model, m)
@@ -76,6 +76,14 @@ def backtest_performance():
                      for k in ("home", "draw", "away"))
         if max(probs, key=probs.get) == actual:
             correct += 1
+        if actual == "draw":
+            draws += 1
+        else:
+            decisive += 1
+            if max(probs, key=probs.get) == actual:
+                decisive_correct += 1
+        if actual in sorted(probs, key=probs.get, reverse=True)[:2]:
+            top2 += 1
         for k in ("home", "draw", "away"):
             bins[min(int(probs[k] * 10), 9)].append((probs[k], 1.0 if k == actual else 0.0))
 
@@ -92,6 +100,9 @@ def backtest_performance():
         "brier": brier / n,
         "logloss": ll / n,
         "accuracy": correct / n,
+        "decisive_acc": decisive_correct / decisive if decisive else 0.0,
+        "top2": top2 / n,
+        "draw_share": draws / n,
         "calib_error": float(np.mean(abs_errs)) if abs_errs else 0.0,
         "calibration": calibration,
     }
