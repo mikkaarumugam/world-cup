@@ -85,9 +85,9 @@ def build():
                 else:   # drawn after extra time -> penalty shootout decided it
                     winner = shootouts.get((str(r["date"].date()),
                                             frozenset((home, away))))
-                knockout.append((home, away, True, winner))   # None -> 50/50 fallback
+                knockout.append((home, away, True, winner, hs, as_))  # None winner -> 50/50
             else:
-                knockout.append((home, away, False, None))
+                knockout.append((home, away, False, None, None, None))
         elif pd.notna(r["home_score"]):
             fixtures.append((home, away, True,
                              int(r["home_score"]), int(r["away_score"]), None, None))
@@ -101,9 +101,9 @@ def build():
     # round. (knockout is already date-ordered.) This lets simulate_once pick out
     # exactly one round at a time even after later rounds appear in the data.
     played_ko, tagged = {}, []
-    for home, away, played, winner in knockout:
+    for home, away, played, winner, hs, as_ in knockout:
         rnd = max(played_ko.get(home, 0), played_ko.get(away, 0))
-        tagged.append((home, away, played, winner, rnd))
+        tagged.append((home, away, played, winner, rnd, hs, as_))
         played_ko[home] = played_ko.get(home, 0) + 1
         played_ko[away] = played_ko.get(away, 0) + 1
     knockout = tagged
@@ -169,7 +169,7 @@ def simulate_once(teams, groups, fixtures, adv, knockout):
         rows = [k for k in knockout if k[4] == rnd and k[0] in cur and k[1] in cur]
         if {t for k in rows for t in k[:2]} == cur:   # full real round for this field
             nxt = []
-            for home, away, played, winner, _ in rows:
+            for home, away, played, winner, *_ in rows:
                 if played and winner is not None:
                     nxt.append(winner)                                  # real result
                 elif played:
@@ -217,14 +217,14 @@ def bracket_structure():
     for rnd, (name, size) in enumerate(BRACKET_ROUNDS):
         rows = [k for k in knockout if k[4] == rnd and k[0] in alive and k[1] in alive]
         ties = []
-        for home, away, played, winner, _ in rows:
+        for home, away, played, winner, _rnd, hs, as_ in rows:
             ties.append({"a": home, "b": away, "pa": round(adv[(home, away)], 3),
-                         "played": played, "winner": winner})
+                         "played": played, "winner": winner, "hs": hs, "as": as_})
             if played and winner is not None:
                 alive.discard(away if winner == home else home)
         while len(ties) < size:   # rounds not yet drawn -> placeholders
             ties.append({"a": None, "b": None, "pa": None,
-                         "played": False, "winner": None})
+                         "played": False, "winner": None, "hs": None, "as": None})
         rounds.append({"round": name, "ties": ties})
     return rounds
 
