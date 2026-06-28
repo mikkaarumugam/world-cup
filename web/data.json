@@ -804,5 +804,297 @@
       "as": 2,
       "correct": true
     }
+  ],
+  "bracket": [
+    {
+      "round": "Round of 32",
+      "ties": [
+        {
+          "a": "South Africa",
+          "b": "Canada",
+          "pa": 0.389,
+          "played": false,
+          "winner": null,
+          "a_iso": "za",
+          "b_iso": "ca",
+          "pb": 0.611
+        },
+        {
+          "a": "Germany",
+          "b": "Paraguay",
+          "pa": 0.7,
+          "played": false,
+          "winner": null,
+          "a_iso": "de",
+          "b_iso": "py",
+          "pb": 0.3
+        },
+        {
+          "a": "Netherlands",
+          "b": "Morocco",
+          "pa": 0.53,
+          "played": false,
+          "winner": null,
+          "a_iso": "nl",
+          "b_iso": "ma",
+          "pb": 0.47
+        },
+        {
+          "a": "Brazil",
+          "b": "Japan",
+          "pa": 0.659,
+          "played": false,
+          "winner": null,
+          "a_iso": "br",
+          "b_iso": "jp",
+          "pb": 0.341
+        },
+        {
+          "a": "Ivory Coast",
+          "b": "Norway",
+          "pa": 0.417,
+          "played": false,
+          "winner": null,
+          "a_iso": "ci",
+          "b_iso": "no",
+          "pb": 0.583
+        },
+        {
+          "a": "France",
+          "b": "Sweden",
+          "pa": 0.75,
+          "played": false,
+          "winner": null,
+          "a_iso": "fr",
+          "b_iso": "se",
+          "pb": 0.25
+        },
+        {
+          "a": "Mexico",
+          "b": "Ecuador",
+          "pa": 0.454,
+          "played": false,
+          "winner": null,
+          "a_iso": "mx",
+          "b_iso": "ec",
+          "pb": 0.546
+        },
+        {
+          "a": "England",
+          "b": "DR Congo",
+          "pa": 0.766,
+          "played": false,
+          "winner": null,
+          "a_iso": "gb-eng",
+          "b_iso": "cd",
+          "pb": 0.234
+        },
+        {
+          "a": "Belgium",
+          "b": "Senegal",
+          "pa": 0.628,
+          "played": false,
+          "winner": null,
+          "a_iso": "be",
+          "b_iso": "sn",
+          "pb": 0.372
+        },
+        {
+          "a": "United States",
+          "b": "Bosnia and Herzegovina",
+          "pa": 0.641,
+          "played": false,
+          "winner": null,
+          "a_iso": "us",
+          "b_iso": "ba",
+          "pb": 0.359
+        },
+        {
+          "a": "Spain",
+          "b": "Austria",
+          "pa": 0.73,
+          "played": false,
+          "winner": null,
+          "a_iso": "es",
+          "b_iso": "at",
+          "pb": 0.27
+        },
+        {
+          "a": "Portugal",
+          "b": "Croatia",
+          "pa": 0.637,
+          "played": false,
+          "winner": null,
+          "a_iso": "pt",
+          "b_iso": "hr",
+          "pb": 0.363
+        },
+        {
+          "a": "Switzerland",
+          "b": "Algeria",
+          "pa": 0.588,
+          "played": false,
+          "winner": null,
+          "a_iso": "ch",
+          "b_iso": "dz",
+          "pb": 0.412
+        },
+        {
+          "a": "Argentina",
+          "b": "Cape Verde",
+          "pa": 0.867,
+          "played": false,
+          "winner": null,
+          "a_iso": "ar",
+          "b_iso": "cv",
+          "pb": 0.133
+        },
+        {
+          "a": "Australia",
+          "b": "Egypt",
+          "pa": 0.517,
+          "played": false,
+          "winner": null,
+          "a_iso": "au",
+          "b_iso": "eg",
+          "pb": 0.483
+        },
+        {
+          "a": "Colombia",
+          "b": "Ghana",
+          "pa": 0.785,
+          "played": false,
+          "winner": null,
+          "a_iso": "co",
+          "b_iso": "gh",
+          "pb": 0.215
+        }
+      ]
+    },
+    {
+      "round": "Round of 16",
+      "ties": [
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        }
+      ]
+    },
+    {
+      "round": "Quarter-final",
+      "ties": [
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        }
+      ]
+    },
+    {
+      "round": "Semi-final",
+      "ties": [
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        },
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        }
+      ]
+    },
+    {
+      "round": "Final",
+      "ties": [
+        {
+          "a": null,
+          "b": null,
+          "pa": null,
+          "played": false,
+          "winner": null
+        }
+      ]
+    }
   ]
 }

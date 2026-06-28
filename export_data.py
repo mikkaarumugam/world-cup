@@ -17,7 +17,7 @@ import pandas as pd
 
 from predictor import (load_matches, drop_sparse_teams, train_model,
                        match_probabilities, ensure_fresh_data, RHO)  # noqa
-from world_cup import simulate_tournament
+from world_cup import simulate_tournament, bracket_structure
 from evaluate import model_probs, actual_outcome, TEST_START
 from flags import _ISO2, _SPECIAL  # noqa
 
@@ -202,6 +202,15 @@ def main():
         })
 
     upcoming, recent = fixtures_and_recent(model)
+
+    # Knockout bracket: real ties + each side's advance odds, isos for flags.
+    bracket = bracket_structure()
+    for rd in bracket:
+        for t in rd["ties"]:
+            if t["a"] is not None:
+                t["a_iso"], t["b_iso"] = iso(t["a"]), iso(t["b"])
+                t["pb"] = round(1 - t["pa"], 3)
+
     data = {
         "generated": date.today().isoformat(),
         "baseline": round(baseline, 4),
@@ -212,6 +221,7 @@ def main():
         "tracker": tournament_tracker(model),
         "upcoming": upcoming,
         "recent": recent,
+        "bracket": bracket,
     }
 
     os.makedirs("web", exist_ok=True)
