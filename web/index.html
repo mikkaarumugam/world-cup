@@ -220,15 +220,17 @@ const App = {
   },
 
   bracketTie(t){
-    const row=(name,iso,p,isWin,decided)=>{
-      const grey=!name, fav=decided? isWin : (p!=null && p>=0.5);
-      const flag=grey? `<span class="bflag-tba"></span>` : this.badge({iso},16);
-      const right=decided? (isWin?`<span style="color:#0B6E4F;font-weight:800;font-size:11px">✓</span>`:'')
-        : (p!=null? `<span class="mono" style="font-size:10.5px;font-weight:${fav?700:500};color:${fav?'#0B6E4F':'#9094A0'}">${Math.round(p*100)}</span>`:'');
-      return `<div class="brow" style="${fav&&!grey?'background:#EFF5F1':''}">${flag}<span class="bname" style="font:${fav?600:500} 11.5px Archivo;color:${grey?'#B7BBC4':(decided&&!isWin?'#9094A0':'#15171C')}">${name||'TBA'}</span>${right}</div>`;
-    };
     const dec=t.played && t.winner;
-    return `<div class="btie">${row(t.a,t.a_iso,t.pa,dec&&t.winner===t.a,dec)}<div style="height:1px;background:#F2F0E9;margin:1px 7px"></div>${row(t.b,t.b_iso,t.pb,dec&&t.winner===t.b,dec)}</div>`;
+    const row=(name,iso,p,score,isWin)=>{
+      const grey=!name, fav=dec? isWin : (p!=null && p>=0.5);
+      const flag=grey? `<span class="bflag-tba"></span>` : this.badge({iso},16);
+      // played -> actual goals (winner bold green); upcoming -> % chance to advance
+      const right=dec
+        ? `<span class="mono" style="font-size:12px;font-weight:${isWin?800:600};color:${isWin?'#0B6E4F':'#9094A0'}">${score!=null?score:''}</span>`
+        : (p!=null? `<span class="mono" style="font-size:10.5px;font-weight:${fav?700:500};color:${fav?'#0B6E4F':'#9094A0'}">${Math.round(p*100)}%</span>`:'');
+      return `<div class="brow" style="${fav&&!grey?'background:#EFF5F1':''}">${flag}<span class="bname" style="font:${fav?600:500} 11.5px Archivo;color:${grey?'#B7BBC4':(dec&&!isWin?'#9094A0':'#15171C')}">${name||'TBA'}</span>${right}</div>`;
+    };
+    return `<div class="btie">${row(t.a,t.a_iso,t.pa,t.hs,dec&&t.winner===t.a)}<div style="height:1px;background:#F2F0E9;margin:1px 7px"></div>${row(t.b,t.b_iso,t.pb,t.as,dec&&t.winner===t.b)}</div>`;
   },
   bracketView(){
     const b=this.data.bracket; if(!b) return '';
