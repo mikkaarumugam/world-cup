@@ -24,6 +24,21 @@
   .menu button{width:100%;display:flex;align-items:center;gap:11px;padding:9px 10px;background:transparent;border:none;border-radius:8px;cursor:pointer;text-align:left}
   .menu button:hover{background:#F3F1EA}
   .badge{border-radius:50%;overflow:hidden;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);background:#EEECE4 center/cover no-repeat}
+  /* Knockout bracket (two-sided tree) */
+  .bkt{display:flex;align-items:stretch;min-width:1240px}
+  .bkt-hd{display:flex;align-items:flex-end;margin-bottom:14px;min-width:1240px}
+  .bcol{display:flex;flex-direction:column;justify-content:space-around}
+  .bconn{display:flex;flex-direction:column;justify-content:space-around;flex:0 0 18px}
+  .belb{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .belb i{display:block;height:50%}
+  .belb.l i{border:1.5px solid #D8D5CC;border-left:0;border-radius:0 8px 8px 0}
+  .belb.r i{border:1.5px solid #D8D5CC;border-right:0;border-radius:8px 0 0 8px}
+  .bhl{display:flex;flex-direction:column;justify-content:center;flex:0 0 14px}
+  .bhl i{display:block;border-top:1.5px solid #D8D5CC}
+  .btie{border:1px solid #ECE9E0;border-radius:8px;padding:3px;background:#fff}
+  .brow{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px}
+  .bname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bflag-tba{width:16px;height:16px;min-width:16px;border-radius:50%;background:#E6E3DA;display:inline-block}
 </style>
 </head>
 <body>
@@ -207,25 +222,37 @@ const App = {
   bracketTie(t){
     const row=(name,iso,p,isWin,decided)=>{
       const grey=!name, fav=decided? isWin : (p!=null && p>=0.5);
-      const flag=grey? `<span style="width:17px;height:17px;min-width:17px;border-radius:50%;background:#E6E3DA;display:inline-block"></span>` : this.badge({iso},17);
-      const right=decided? (isWin?`<span style="color:#0B6E4F;font-weight:800;font-size:12px">✓</span>`:'')
-        : (p!=null? `<span class="mono" style="font-size:11px;font-weight:${fav?700:500};color:${fav?'#0B6E4F':'#9094A0'}">${Math.round(p*100)}%</span>`:'');
-      return `<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:5px;${fav&&!grey?'background:#EFF5F1':''}">
-        ${flag}<span style="flex:1;font:${fav?600:500} 12px Archivo;color:${grey?'#B7BBC4':(decided&&!isWin?'#9094A0':'#15171C')};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name||'TBA'}</span>${right}</div>`;
+      const flag=grey? `<span class="bflag-tba"></span>` : this.badge({iso},16);
+      const right=decided? (isWin?`<span style="color:#0B6E4F;font-weight:800;font-size:11px">✓</span>`:'')
+        : (p!=null? `<span class="mono" style="font-size:10.5px;font-weight:${fav?700:500};color:${fav?'#0B6E4F':'#9094A0'}">${Math.round(p*100)}</span>`:'');
+      return `<div class="brow" style="${fav&&!grey?'background:#EFF5F1':''}">${flag}<span class="bname" style="font:${fav?600:500} 11.5px Archivo;color:${grey?'#B7BBC4':(decided&&!isWin?'#9094A0':'#15171C')}">${name||'TBA'}</span>${right}</div>`;
     };
-    const decided=t.played && t.winner;
-    return `<div style="border:1px solid #ECE9E0;border-radius:8px;padding:3px;background:#fff">
-      ${row(t.a,t.a_iso,t.pa,decided&&t.winner===t.a,decided)}
-      <div style="height:1px;background:#F2F0E9;margin:1px 8px"></div>
-      ${row(t.b,t.b_iso,t.pb,decided&&t.winner===t.b,decided)}</div>`;
+    const dec=t.played && t.winner;
+    return `<div class="btie">${row(t.a,t.a_iso,t.pa,dec&&t.winner===t.a,dec)}<div style="height:1px;background:#F2F0E9;margin:1px 7px"></div>${row(t.b,t.b_iso,t.pb,dec&&t.winner===t.b,dec)}</div>`;
   },
   bracketView(){
     const b=this.data.bracket; if(!b) return '';
-    const cols=b.map(rd=>`<div style="display:flex;flex-direction:column;flex:1;min-width:178px">
-      <div class="eyebrow" style="text-align:center;margin-bottom:12px">${rd.round}</div>
-      <div style="display:flex;flex-direction:column;justify-content:space-around;gap:10px;flex:1">${rd.ties.map(t=>this.bracketTie(t)).join('')}</div>
-    </div>`).join('');
-    return `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div style="display:flex;gap:14px;align-items:stretch;min-width:900px">${cols}</div></div>`;
+    const R={}; b.forEach(rd=>R[rd.round]=rd.ties);
+    const r32=R['Round of 32'], r16=R['Round of 16'], qf=R['Quarter-final'],
+          sf=R['Semi-final'], fin=R['Final'];
+    const half=(a,side)=> side==='l'? a.slice(0,a.length/2) : a.slice(a.length/2);
+    const W={r32:132,mid:118,fin:132};
+    // each tie sits in a flex:1 wrapper so its centre lands at (i+0.5)/n -> the
+    // connector elbows (also flex:1) line up exactly with the pair they join.
+    const col=(ties,basis)=>`<div class="bcol" style="flex:0 0 ${basis}px">${ties.map(t=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:3px 0">${this.bracketTie(t)}</div>`).join('')}</div>`;
+    const conn=(n,side)=>`<div class="bconn">${Array.from({length:n}).map(()=>`<div class="belb ${side}"><i></i></div>`).join('')}</div>`;
+    const hl=()=>`<div class="bhl"><i></i></div>`;
+    const body=
+      col(half(r32,'l'),W.r32)+conn(4,'l')+col(half(r16,'l'),W.mid)+conn(2,'l')+col(half(qf,'l'),W.mid)+conn(1,'l')+col(half(sf,'l'),W.mid)+hl()+
+      col(fin,W.fin)+
+      hl()+col(half(sf,'r'),W.mid)+conn(1,'r')+col(half(qf,'r'),W.mid)+conn(2,'r')+col(half(r16,'r'),W.mid)+conn(4,'r')+col(half(r32,'r'),W.r32);
+    const hd=(l,basis)=>`<div class="eyebrow" style="flex:0 0 ${basis}px;text-align:center">${l}</div>`;
+    const sp=w=>`<div style="flex:0 0 ${w}px"></div>`;
+    const header=
+      hd('Round of 32',W.r32)+sp(18)+hd('Round of 16',W.mid)+sp(18)+hd('Quarter-final',W.mid)+sp(18)+hd('Semi-final',W.mid)+sp(14)+
+      hd('Final',W.fin)+
+      sp(14)+hd('Semi-final',W.mid)+sp(18)+hd('Quarter-final',W.mid)+sp(18)+hd('Round of 16',W.mid)+sp(18)+hd('Round of 32',W.r32);
+    return `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div style="min-width:1240px"><div class="bkt-hd">${header}</div><div class="bkt">${body}</div></div></div>`;
   },
   oddsPanel(){
     const s=this.state, d=this.data;
@@ -241,19 +268,19 @@ const App = {
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
       <p style="margin:0 auto 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px;text-align:center;text-wrap:balance">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
+      <div class="card" style="padding:22px 24px;margin-bottom:18px;width:min(1380px,calc(100vw - 24px));margin-left:50%;transform:translateX(-50%)">
+        <div style="font:700 16px Archivo;margin-bottom:3px">Knockout bracket</div>
+        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:22px">Each tie shows both sides' chance to advance (number = % to go through; neutral venue, a draw is settled on penalties). Rounds fill in as matches are played — later ones show TBA until the draw reaches them.</div>
+        ${this.bracketView()}
+      </div>
       <div class="card" style="padding:20px 22px;margin-bottom:18px">
         <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="eyebrow">Teams to show</span><span class="mono" style="font-weight:700;font-size:15px;color:#0B6E4F">${s.teamsToShow}</span></div>
         <input type="range" min="8" max="48" value="${s.teamsToShow}" oninput="App.setState({teamsToShow:+this.value})" style="width:100%;background:linear-gradient(to right,#0B6E4F 0%,#0B6E4F ${pct}%,#DCD9D0 ${pct}%,#DCD9D0 100%)">
       </div>
-      <div class="card" style="padding:22px 24px;margin-bottom:18px">
+      <div class="card" style="padding:22px 24px">
         <div style="font:700 16px Archivo;margin-bottom:3px">Title odds</div>
         <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:18px">Chance of winning the tournament across 3,000 simulated tournaments (± shows 95% simulation uncertainty).</div>
         ${rows}
-      </div>
-      <div class="card" style="padding:22px 24px">
-        <div style="font:700 16px Archivo;margin-bottom:3px">Knockout bracket</div>
-        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:22px">The real ties with each side's chance to advance (neutral venue; a draw is settled on penalties). Rounds fill in as matches are played — later ones show TBA until the draw reaches them.</div>
-        ${this.bracketView()}
       </div>
     </div>`;
   },
