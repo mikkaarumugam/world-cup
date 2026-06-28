@@ -204,6 +204,29 @@ const App = {
     </div>`;
   },
 
+  bracketTie(t){
+    const row=(name,iso,p,isWin,decided)=>{
+      const grey=!name, fav=decided? isWin : (p!=null && p>=0.5);
+      const flag=grey? `<span style="width:17px;height:17px;min-width:17px;border-radius:50%;background:#E6E3DA;display:inline-block"></span>` : this.badge({iso},17);
+      const right=decided? (isWin?`<span style="color:#0B6E4F;font-weight:800;font-size:12px">✓</span>`:'')
+        : (p!=null? `<span class="mono" style="font-size:11px;font-weight:${fav?700:500};color:${fav?'#0B6E4F':'#9094A0'}">${Math.round(p*100)}%</span>`:'');
+      return `<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:5px;${fav&&!grey?'background:#EFF5F1':''}">
+        ${flag}<span style="flex:1;font:${fav?600:500} 12px Archivo;color:${grey?'#B7BBC4':(decided&&!isWin?'#9094A0':'#15171C')};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name||'TBA'}</span>${right}</div>`;
+    };
+    const decided=t.played && t.winner;
+    return `<div style="border:1px solid #ECE9E0;border-radius:8px;padding:3px;background:#fff">
+      ${row(t.a,t.a_iso,t.pa,decided&&t.winner===t.a,decided)}
+      <div style="height:1px;background:#F2F0E9;margin:1px 8px"></div>
+      ${row(t.b,t.b_iso,t.pb,decided&&t.winner===t.b,decided)}</div>`;
+  },
+  bracketView(){
+    const b=this.data.bracket; if(!b) return '';
+    const cols=b.map(rd=>`<div style="display:flex;flex-direction:column;flex:1;min-width:178px">
+      <div class="eyebrow" style="text-align:center;margin-bottom:12px">${rd.round}</div>
+      <div style="display:flex;flex-direction:column;justify-content:space-around;gap:10px;flex:1">${rd.ties.map(t=>this.bracketTie(t)).join('')}</div>
+    </div>`).join('');
+    return `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div style="display:flex;gap:14px;align-items:stretch;min-width:900px">${cols}</div></div>`;
+  },
   oddsPanel(){
     const s=this.state, d=this.data;
     const sorted=d.teams.slice().sort((a,b)=>b.title-a.title);
@@ -215,10 +238,6 @@ const App = {
         <div style="flex:1;height:22px;background:#EEECE4;border-radius:6px"><div style="width:${(t.title*100).toFixed(1)}%;height:100%;background:#0B6E4F;border-radius:6px"></div></div>
         <div style="width:96px;text-align:right"><div class="mono" style="font-weight:700;font-size:13px">${(t.title*100).toFixed(1)}%</div><div class="mono" style="font-size:10.5px;color:#9094A0;margin-top:2px">± ${ci.toFixed(1)}</div></div></div>`;
     }).join('');
-    const ot=this.team(s.oddsTeam);
-    const stages=[['Round of 16','r16'],['Quarter-final','qf'],['Semi-final','sf'],['Final','final'],['Champion','title']];
-    const funnel=stages.map(([nm,k])=>`<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px"><span style="width:130px;min-width:130px;font:600 12px Archivo;color:#3A3D44">${nm}</span><div style="flex:1;height:30px;background:#EEECE4;border-radius:7px;overflow:hidden"><div style="width:${(ot[k]*100).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#0B6E4F,#14905F);border-radius:7px"></div></div><span class="mono" style="width:54px;text-align:right;font-weight:700;font-size:13px">${(ot[k]*100).toFixed(1)}%</span></div>`).join('');
-    const progRows=sorted.slice(0,12).map(t=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:13px"><div style="display:flex;align-items:center;gap:9px;width:150px;min-width:150px">${this.badge(t,26)}<span style="font:500 14px Archivo">${t.name}</span></div>${['r16','qf','sf','final','title'].map(k=>`<div style="flex:1;display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#EEECE4;border-radius:4px;overflow:hidden"><div style="width:${(t[k]*100).toFixed(0)}%;height:100%;background:#0B6E4F;border-radius:4px"></div></div><span class="mono" style="width:44px;font-size:12px;color:#3A3D44">${(t[k]*100).toFixed(1)}%</span></div>`).join('')}</div>`).join('');
     const pct=((s.teamsToShow-8)/(48-8)*100).toFixed(1);
     return `<div style="padding:34px 0 10px">
       <p style="margin:0 auto 26px;font:400 16px/1.55 Archivo;color:#4C4F57;max-width:640px;text-align:center;text-wrap:balance">Real groups and results so far are locked in; the model plays out every remaining fixture across 3,000 simulated tournaments. All 48 teams are simulated; the strongest are shown.</p>
@@ -228,17 +247,13 @@ const App = {
       </div>
       <div class="card" style="padding:22px 24px;margin-bottom:18px">
         <div style="font:700 16px Archivo;margin-bottom:3px">Title odds</div>
-        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:18px">Chance of winning the tournament (± shows 95% simulation uncertainty). Click a team to trace its road to the trophy.</div>
+        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:18px">Chance of winning the tournament across 3,000 simulated tournaments (± shows 95% simulation uncertainty).</div>
         ${rows}
       </div>
-      <div class="card" style="padding:22px 24px;margin-bottom:18px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:4px"><div><div style="font:700 16px Archivo">Road to the trophy</div><div style="font:400 12.5px Archivo;color:#9094A0">A team's chance of reaching each knockout round.</div></div>${this.oddsDropdown()}</div>
-        <div style="margin-top:18px">${funnel}</div>
-      </div>
       <div class="card" style="padding:22px 24px">
-        <div style="font:700 16px Archivo;margin-bottom:3px">How far each team goes</div>
-        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:20px">Probability of reaching each stage of the bracket</div>
-        <div style="overflow-x:auto"><div style="min-width:640px"><div style="display:flex;gap:10px;padding-bottom:11px;border-bottom:1px solid #EEECE4;margin-bottom:14px"><span class="eyebrow" style="width:150px;min-width:150px">Team</span>${['Reach R16','Reach QF','Reach SF','Reach final','Win title'].map(h=>`<span class="eyebrow" style="flex:1">${h}</span>`).join('')}</div>${progRows}</div></div>
+        <div style="font:700 16px Archivo;margin-bottom:3px">Knockout bracket</div>
+        <div style="font:400 12.5px Archivo;color:#9094A0;margin-bottom:22px">The real ties with each side's chance to advance (neutral venue; a draw is settled on penalties). Rounds fill in as matches are played — later ones show TBA until the draw reaches them.</div>
+        ${this.bracketView()}
       </div>
     </div>`;
   },

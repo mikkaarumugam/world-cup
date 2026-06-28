@@ -200,6 +200,35 @@ def simulate_tournament(n_sims=N_SIMS):
     return table.sort_values("title", ascending=False)
 
 
+# The knockout bracket has five rounds of these sizes (16 ties -> ... -> 1 final).
+BRACKET_ROUNDS = [("Round of 32", 16), ("Round of 16", 8),
+                  ("Quarter-final", 4), ("Semi-final", 2), ("Final", 1)]
+
+
+def bracket_structure():
+    """The real knockout bracket for the website: each round's actual ties with
+    each side's chance to advance, padded with TBA placeholders for rounds the
+    draw hasn't reached yet. Follows real results (no simulation), so a team that
+    has lost is gone and only still-alive ties appear (the 3rd-place game, between
+    two eliminated teams, is naturally skipped)."""
+    _, _, _, adv, knockout = build()
+    alive = {t for k in knockout if k[4] == 0 for t in k[:2]}   # the 32 qualifiers
+    rounds = []
+    for rnd, (name, size) in enumerate(BRACKET_ROUNDS):
+        rows = [k for k in knockout if k[4] == rnd and k[0] in alive and k[1] in alive]
+        ties = []
+        for home, away, played, winner, _ in rows:
+            ties.append({"a": home, "b": away, "pa": round(adv[(home, away)], 3),
+                         "played": played, "winner": winner})
+            if played and winner is not None:
+                alive.discard(away if winner == home else home)
+        while len(ties) < size:   # rounds not yet drawn -> placeholders
+            ties.append({"a": None, "b": None, "pa": None,
+                         "played": False, "winner": None})
+        rounds.append({"round": name, "ties": ties})
+    return rounds
+
+
 if __name__ == "__main__":
     print(f"Simulating the 2026 World Cup {N_SIMS} times...\n")
     table = simulate_tournament()
